@@ -3,132 +3,261 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Agenda Interactiva con Firebase</title>
+<title>Agenda Interactiva</title>
+
+<!-- Chart.js para gráficos -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
 <style>
-  body { font-family: system-ui, Arial; background:#f5f7ff; padding:24px; }
-  .box { max-width:640px; margin:auto; background:#fff; border-radius:12px; padding:16px; box-shadow:0 8px 24px rgba(0,0,0,.08); }
-  input, button { padding:10px; border-radius:10px; border:1px solid #cbd5e1; }
-  button { background:#6366f1; color:white; border:none; cursor:pointer; }
-  ul { list-style:none; padding:0; }
-  li { background:#f8fafc; margin:8px 0; padding:10px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;}
-  .muted { color:#64748b; font-size:12px; }
-  .log { background:#0b1020; color:#e2e8f0; padding:8px; border-radius:8px; font-family:ui-monospace,Consolas,monospace; max-height:140px; overflow:auto; margin-top:12px; }
+:root {
+  --primary: #6366f1;
+  --secondary: #a5b4fc;
+  --bg: #f5f7ff;
+  --text: #1f2937;
+  --muted: #6b7280;
+  --ok: #10b981;
+  --danger: #ef4444;
+}
+body {
+  margin: 0; padding: 24px;
+  font-family: "Inter", system-ui, sans-serif;
+  background: var(--bg); color: var(--text);
+  display: flex; flex-direction: column; align-items: center;
+}
+h1 {
+  font-size: 1.8rem; font-weight: 800;
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  margin-bottom: 16px;
+}
+.btn {
+  background: var(--primary); color: white; border: none;
+  border-radius: 12px; padding: 10px 14px; cursor: pointer;
+  transition: transform .15s ease; font-weight: 700;
+}
+.btn:hover { transform: translateY(-1px); }
+.btn.gray { background: #9ca3af; }
+.btn.danger { background: var(--danger); }
+.container { width: 100%; max-width: 900px; display: grid; gap: 16px; }
+.card {
+  background: white; padding: 16px; border-radius: 16px;
+  box-shadow: 0 6px 18px rgba(99,102,241,.08);
+}
+.entry-inline { display: grid; gap: 8px; grid-template-columns: 1fr 120px auto; margin-top: 10px; }
+.entry-inline.money { grid-template-columns: 1fr 120px 120px auto; }
+.entry-inline.victory { grid-template-columns: 1fr 120px auto; }
+input, select {
+  padding: 10px; border: 1px solid #cbd5e1; border-radius: 10px;
+  font-size: .95rem;
+}
+.modal {
+  position: fixed; inset: 0; background: rgba(0,0,0,.5);
+  display: none; align-items: center; justify-content: center;
+}
+.modal .box {
+  background: white; padding: 20px; border-radius: 14px; width: 90%; max-width: 600px;
+  box-shadow: 0 10px 24px rgba(0,0,0,.15);
+}
+.entry {
+  background: #eef2ff; padding: 10px; border-radius: 10px; margin: 8px 0;
+}
+.entry.victory { background: #ecfdf5; border-left: 5px solid var(--ok); }
+.entry.defeat { background: #fef2f2; border-left: 5px solid var(--danger); }
 </style>
 </head>
+
 <body>
-<div class="box">
-  <h1>🔥 Agenda con Firebase</h1>
-  <p class="muted">
-    Este demo usa <b>Firestore + Auth anónimo</b>.<br>
-    Las tareas se guardan por usuario/dispositivo.
-  </p>
+<h1>📅 Agenda Interactiva</h1>
+<div style="margin-bottom: 16px;">
+  <button class="btn" id="btnNew">+ Nueva Tarea</button>
+</div>
+<div class="container" id="taskList"></div>
 
-  <div style="display:flex; gap:8px; margin-bottom:10px;">
-    <input id="taskInput" placeholder="Nueva tarea..." />
-    <button id="addBtn">Agregar</button>
+<!-- MODAL NUEVA TAREA -->
+<div class="modal" id="modalNew">
+  <div class="box">
+    <h2>Crear nueva tarea</h2>
+    <input id="taskName" placeholder="Nombre de la tarea" style="width:100%;margin-bottom:10px;">
+    <select id="taskType" style="width:100%;margin-bottom:10px;">
+      <option value="reminder">Recordatorio</option>
+      <option value="count">Objetivo / Entradas</option>
+      <option value="money">Objetivo / Dinero</option>
+      <option value="victory">Registro Victorias/Derrotas</option>
+    </select>
+    <select id="taskPeriod" style="width:100%;margin-bottom:10px;">
+      <option value="daily">Diario</option>
+      <option value="weekly" selected>Semanal</option>
+      <option value="monthly">Mensual</option>
+      <option value="yearly">Anual</option>
+    </select>
+    <input id="taskLimit" type="number" placeholder="Límite (opcional)" style="width:100%;margin-bottom:14px;">
+    <div style="text-align:right;">
+      <button class="btn gray" id="cancelNew">Cancelar</button>
+      <button class="btn" id="createNew">Crear</button>
+    </div>
   </div>
-
-  <ul id="list"></ul>
-
-  <h3>Logs</h3>
-  <div class="log" id="log"></div>
 </div>
 
-<!-- Script principal -->
+<!-- MODAL HISTORIAL -->
+<div class="modal" id="modalHist">
+  <div class="box">
+    <h2 id="histTitle"></h2>
+    <div id="entries"></div>
+    <div style="display:flex;justify-content:space-between;margin-top:12px;">
+      <button class="btn danger" id="deleteTask">Eliminar tarea</button>
+      <button class="btn gray" id="closeHist">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL INSIGHTS -->
+<div class="modal" id="modalInsights">
+  <div class="box">
+    <h2 id="insightsTitle"></h2>
+    <canvas id="chart" height="180"></canvas>
+    <div style="text-align:right;margin-top:10px;">
+      <button class="btn gray" id="closeInsights">Cerrar</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
-  // 🔹 Importamos los SDKs Firebase (versión modular)
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-  import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-  import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import { getFirestore, collection, addDoc, getDocs, setDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-  // 🔧 Tu configuración personalizada:
-  const firebaseConfig = {
-    apiKey: "AIzaSyDlJGGfe87b6SVzJ_LcRCtQ7lnSTkvQajI",
-    authDomain: "agenda-e4d10.firebaseapp.com",
-    projectId: "agenda-e4d10",
-    storageBucket: "agenda-e4d10.firebasestorage.app",
-    messagingSenderId: "537185978413",
-    appId: "1:537185978413:web:f3d2561fc7a559e33010a4",
-    measurementId: "G-R3R4S8JK23"
-  };
+const firebaseConfig = {
+  apiKey: "AIzaSyDlJGGfe87b6SVzJ_LcRCtQ7lnSTkvQajI",
+  authDomain: "agenda-e4d10.firebaseapp.com",
+  projectId: "agenda-e4d10",
+  storageBucket: "agenda-e4d10.firebasestorage.app",
+  messagingSenderId: "537185978413",
+  appId: "1:537185978413:web:f3d2561fc7a559e33010a4",
+  measurementId: "G-R3R4S8JK23"
+};
 
-  // 🔥 Inicializamos Firebase
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+let uid = null;
+let tasks = [];
+let selected = null;
+const $ = (q)=>document.querySelector(q);
 
-  // 🔸 Utilidades rápidas
-  const $ = (q)=>document.querySelector(q);
-  function log(...args){ const el=$("#log"); el.textContent += args.join(" ") + "\n"; el.scrollTop = el.scrollHeight; }
+onAuthStateChanged(auth, async (user)=>{
+  if(!user) await signInAnonymously(auth);
+  uid = user?.uid;
+  if(uid) await loadTasks();
+});
 
-  // 🔑 Estado del usuario
-  let uid = null;
+async function loadTasks(){
+  const snap = await getDocs(collection(db,"usuarios",uid,"tareas"));
+  tasks = [];
+  snap.forEach(d=>tasks.push({id:d.id,...d.data()}));
+  render();
+}
 
-  // ----------------------------
-  // AUTENTICACIÓN ANÓNIMA
-  // ----------------------------
-  onAuthStateChanged(auth, async (user) => {
-    if (user) {
-      uid = user.uid;
-      log("✅ Conectado como:", uid);
-      await listar();
-    } else {
-      log("🕓 Iniciando sesión anónima...");
-      await signInAnonymously(auth).catch(e => log("❌ Error auth:", e.code, e.message));
-    }
+async function saveTask(t){
+  if(!t.id){
+    const ref = await addDoc(collection(db,"usuarios",uid,"tareas"),t);
+    t.id=ref.id;
+  } else {
+    await setDoc(doc(db,"usuarios",uid,"tareas",t.id),t);
+  }
+}
+
+async function deleteTaskFn(id){
+  if(!confirm("¿Eliminar esta tarea?"))return;
+  await deleteDoc(doc(db,"usuarios",uid,"tareas",id));
+  tasks = tasks.filter(x=>x.id!==id);
+  $("#modalHist").style.display="none";
+  render();
+}
+
+// ----------- Render ----------
+function render(){
+  const list=$("#taskList"); list.innerHTML="";
+  tasks.forEach((t)=>{
+    const card=document.createElement("div");
+    card.className="card";
+    card.innerHTML=`<h3>${t.name}</h3>
+    <small>${t.type}</small><br>
+    <div class="entry-inline ${t.type}">
+      <input id="cmt-${t.id}" placeholder="Comentario...">
+      ${t.type==="money"?'<input id="amt-'+t.id+'" type="number" placeholder="$ monto">':''}
+      ${t.type==="victory"?'<select id="res-'+t.id+'"><option value="victoria">Victoria</option><option value="derrota">Derrota</option></select>':''}
+      <button class="btn" onclick="addEntry('${t.id}')">➕</button>
+    </div>
+    <div style="margin-top:10px;display:flex;gap:8px;">
+      <button class="btn gray" onclick="openHist('${t.id}')">📜 Historial</button>
+      <button class="btn" onclick="openInsights('${t.id}')">📊 Insights</button>
+    </div>`;
+    list.append(card);
   });
+}
 
-  // ----------------------------
-  // AGREGAR NUEVA TAREA
-  // ----------------------------
-  async function agregar() {
-    const input = $("#taskInput");
-    const nombre = input.value.trim();
-    if (!nombre) return;
-    try {
-      const ref = collection(db, "usuarios", uid, "tareas");
-      await addDoc(ref, { nombre, createdAt: serverTimestamp() });
-      log("➕ Agregada:", nombre);
-      input.value = "";
-      await listar();
-    } catch(e) {
-      log("❌ addDoc:", e.code || e.message, e);
-      alert("Error al guardar, revisa las reglas de Firestore.");
-    }
-  }
+window.addEntry = async function(id){
+  const t = tasks.find(x=>x.id===id);
+  const cmt = $(`#cmt-${id}`).value.trim();
+  const entry = { text:cmt, date:new Date().toISOString() };
+  if(t.type==="money") entry.amount = Number($(`#amt-${id}`).value||0);
+  if(t.type==="victory") entry.result = $(`#res-${id}`).value;
+  t.entries = t.entries || [];
+  t.entries.push(entry);
+  await saveTask(t);
+  render();
+}
 
-  // ----------------------------
-  // LISTAR TAREAS
-  // ----------------------------
-  async function listar() {
-    try {
-      const ref = collection(db, "usuarios", uid, "tareas");
-      const q = query(ref, orderBy("createdAt", "desc"));
-      const snap = await getDocs(q);
-      const ul = $("#list");
-      ul.innerHTML = "";
-      snap.forEach(d => {
-        const li = document.createElement("li");
-        li.innerHTML = `<span>${d.data().nombre || "(sin nombre)"}</span>
-                        <button data-id="${d.id}" style="background:#ef4444">Eliminar</button>`;
-        li.querySelector("button").onclick = async () => {
-          await deleteDoc(doc(db, "usuarios", uid, "tareas", d.id));
-          log("🗑️ Eliminada:", d.id);
-          await listar();
-        };
-        ul.appendChild(li);
-      });
-      log("📥 Cargadas:", snap.size, "tareas");
-    } catch(e) {
-      log("❌ getDocs:", e.code || e.message, e);
-    }
-  }
+window.openHist = function(id){
+  const t = tasks.find(x=>x.id===id);
+  selected=id;
+  $("#histTitle").textContent=t.name;
+  const cont=$("#entries"); cont.innerHTML="";
+  if(!t.entries?.length){cont.innerHTML="<p>Sin entradas</p>";}
+  else t.entries.slice().reverse().forEach(e=>{
+    const div=document.createElement("div");
+    div.className="entry "+(e.result==="victoria"?"victory":e.result==="derrota"?"defeat":"");
+    div.innerHTML=`<b>${new Date(e.date).toLocaleString()}</b><br>${e.text||""}${t.type==="money"?"<br><b>$"+(e.amount||0)+"</b>":""}${t.type==="victory"?"<br><i>"+(e.result||"")+"</i>":""}`;
+    cont.append(div);
+  });
+  $("#modalHist").style.display="flex";
+}
+window.closeHist=()=>$("#modalHist").style.display="none";
+$("#closeHist").onclick=()=>$("#modalHist").style.display="none";
+$("#deleteTask").onclick=()=>deleteTaskFn(selected);
 
-  // ----------------------------
-  // EVENTOS
-  // ----------------------------
-  $("#addBtn").onclick = agregar;
-  $("#taskInput").addEventListener("keydown", (e)=>{ if(e.key==="Enter") agregar(); });
+window.openInsights = function(id){
+  const t = tasks.find(x=>x.id===id);
+  $("#insightsTitle").textContent=t.name;
+  const ctx=$("#chart").getContext("2d");
+  let data={},labels=[],colors=[];
+  if(t.type==="victory"){
+    const wins=t.entries?.filter(e=>e.result==="victoria").length||0;
+    const losses=t.entries?.filter(e=>e.result==="derrota").length||0;
+    data=[wins,losses];labels=["Victorias","Derrotas"];colors=["#10b981","#ef4444"];
+  } else if(t.type==="money"){
+    const sum=t.entries?.reduce((a,e)=>a+(e.amount||0),0)||0;
+    data=[sum];labels=["Gasto total"];colors=["#6366f1"];
+  } else data=[t.entries?.length||0],labels=["Entradas"],colors=["#6366f1"];
+  if(window.chart1) window.chart1.destroy();
+  window.chart1=new Chart(ctx,{type:"pie",data:{labels,datasets:[{data,backgroundColor:colors}]}});
+  $("#modalInsights").style.display="flex";
+}
+$("#closeInsights").onclick=()=>$("#modalInsights").style.display="none";
+
+$("#btnNew").onclick=()=>$("#modalNew").style.display="flex";
+$("#cancelNew").onclick=()=>$("#modalNew").style.display="none";
+$("#createNew").onclick=async()=>{
+  const name=$("#taskName").value.trim();
+  const type=$("#taskType").value;
+  const period=$("#taskPeriod").value;
+  const limit=$("#taskLimit").value;
+  if(!name)return alert("Escribe un nombre");
+  const task={name,type,period,limit:limit?Number(limit):null,entries:[]};
+  await saveTask(task);
+  $("#modalNew").style.display="none";
+  $("#taskName").value="";render();
+};
 </script>
 </body>
 </html>
