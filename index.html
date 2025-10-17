@@ -2,339 +2,133 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Agenda Interactiva</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Agenda Interactiva con Firebase</title>
 <style>
-:root {
-  --primary: #6366f1;
-  --secondary: #a5b4fc;
-  --background: #f5f7ff;
-  --text: #1f2937;
-  --muted: #6b7280;
-  --danger: #ef4444;
-  --ok: #10b981;
-  --warn: #f59e0b;
-}
-* { box-sizing: border-box; }
-body {
-  margin: 0;
-  font-family: "Inter", "Segoe UI", sans-serif;
-  background: var(--background);
-  color: var(--text);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 24px 12px 64px;
-}
-h1 {
-  font-size: 1.8rem;
-  background: linear-gradient(90deg, var(--primary), var(--secondary));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  margin-bottom: 16px;
-  font-weight: 800;
-}
-.btn {
-  padding: 10px 14px;
-  border: none;
-  border-radius: 12px;
-  background: var(--primary);
-  color: white;
-  font-weight: 700;
-  cursor: pointer;
-  transition: transform .15s ease, opacity .2s ease;
-}
-.btn:hover { transform: translateY(-1px); }
-.btn.gray { background: #9ca3af; }
-.btn.danger { background: var(--danger); }
-.topbar { width: 100%; max-width: 900px; display: flex; justify-content: flex-end; margin-bottom: 16px; }
-.wrap { width: 100%; max-width: 900px; display: grid; gap: 12px; }
-.card {
-  background: white;
-  border-radius: 16px;
-  padding: 16px;
-  box-shadow: 0 6px 18px rgba(99,102,241,.08);
-  transition: transform .15s ease;
-}
-.card:hover { transform: translateY(-2px); }
-.task-row {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 8px; align-items: center;
-}
-.task-title { font-weight: 800; font-size: 1.05rem; }
-.task-meta { font-size: .85rem; color: var(--muted); margin-top: 4px; }
-.btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
-.progress { margin-top: 10px; background: #eef2ff; border-radius: 10px; height: 10px; overflow: hidden; }
-.bar { height: 100%; background: linear-gradient(90deg, var(--primary), var(--secondary)); width: 0%; transition: width .3s ease; }
-.progress-label { margin-top: 6px; font-size: .9rem; color: var(--muted); }
-.entry-inline {
-  margin-top: 12px;
-  display: grid;
-  grid-template-columns: 1fr 120px 120px auto;
-  gap: 8px;
-}
-.entry-inline.money { grid-template-columns: 1fr 120px 120px 120px auto; }
-input[type="text"], input[type="number"], select {
-  padding: 10px;
-  border: 1px solid #c7d2fe;
-  border-radius: 10px;
-  font-size: .95rem;
-}
-.modal {
-  position: fixed; inset: 0; background: rgba(0,0,0,.6);
-  display: none; align-items: center; justify-content: center;
-  backdrop-filter: blur(3px); padding: 16px;
-}
-.modal .box {
-  background: white; width: 100%; max-width: 600px;
-  border-radius: 18px; padding: 18px;
-  box-shadow: 0 12px 28px rgba(0,0,0,.15);
-  animation: pop .15s ease;
-}
-@keyframes pop { from{ transform: scale(.97); opacity: 0; } to{ transform: scale(1); opacity: 1; } }
-.row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.mt { margin-top: 12px; }
-.entry {
-  background: #eef2ff; padding: 10px; border-radius: 10px; margin: 8px 0;
-  display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: start;
-}
-.entry.victory { background: #ecfdf5; border-left: 5px solid var(--ok); }
-.entry.defeat  { background: #fef2f2; border-left: 5px solid var(--danger); }
-.hint { font-size: .85rem; color: var(--muted); }
-.badge {
-  display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: .75rem; font-weight: 700;
-  background: #eef2ff; color: var(--primary); margin-left: 8px;
-}
-.badge.warn { background: #fff7ed; color: var(--warn); }
-.badge.ok { background: #ecfdf5; color: var(--ok); }
-.kpis { display: grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap: 10px; margin: 8px 0 14px; }
-.kpi { background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 12px; padding: 12px; }
-.kpi b { font-size: 1.1rem; }
+  body { font-family: system-ui, Arial; background:#f5f7ff; padding:24px; }
+  .box { max-width:640px; margin:auto; background:#fff; border-radius:12px; padding:16px; box-shadow:0 8px 24px rgba(0,0,0,.08); }
+  input, button { padding:10px; border-radius:10px; border:1px solid #cbd5e1; }
+  button { background:#6366f1; color:white; border:none; cursor:pointer; }
+  ul { list-style:none; padding:0; }
+  li { background:#f8fafc; margin:8px 0; padding:10px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;}
+  .muted { color:#64748b; font-size:12px; }
+  .log { background:#0b1020; color:#e2e8f0; padding:8px; border-radius:8px; font-family:ui-monospace,Consolas,monospace; max-height:140px; overflow:auto; margin-top:12px; }
 </style>
 </head>
 <body>
-<h1>📅 Agenda Interactiva</h1>
-<div class="topbar">
-  <button class="btn" id="btnNew">Nueva tarea</button>
-</div>
-<div id="list" class="wrap"></div>
+<div class="box">
+  <h1>🔥 Agenda con Firebase</h1>
+  <p class="muted">
+    Este demo usa <b>Firestore + Auth anónimo</b>.<br>
+    Las tareas se guardan por usuario/dispositivo.
+  </p>
 
-<!-- MODAL Nueva Tarea -->
-<div id="modalNew" class="modal">
-  <div class="box">
-    <h3>Crear nueva tarea</h3>
-    <label>Nombre</label>
-    <input id="newName" type="text" placeholder="Ej: Torneo semanal / Leer 30 min" />
-    <div class="row mt">
-      <div>
-        <label>Tipo</label>
-        <select id="newType">
-          <option value="reminder">Recordatorio</option>
-          <option value="count">Objetivo / Entradas</option>
-          <option value="money">Objetivo / Dinero</option>
-          <option value="victory">Registro Victoria / Derrota</option>
-        </select>
-      </div>
-      <div>
-        <label>Periodo</label>
-        <select id="newPeriod">
-          <option value="daily">Diario</option>
-          <option value="weekly" selected>Semanal</option>
-          <option value="monthly">Mensual</option>
-          <option value="yearly">Anual</option>
-        </select>
-      </div>
-    </div>
-    <div class="row mt" id="limitRow">
-      <div>
-        <label id="limitLabel">Límite</label>
-        <input id="newLimit" type="number" min="0" step="1" placeholder="Ej: 5" />
-      </div>
-      <div>
-        <label class="hint" id="limitHint">Opcional: define un límite numérico.</label>
-      </div>
-    </div>
-    <div class="mt" style="display:flex;justify-content:space-between;">
-      <button class="btn gray" id="cancelNew">Cancelar</button>
-      <button class="btn" id="createNew">Crear</button>
-    </div>
+  <div style="display:flex; gap:8px; margin-bottom:10px;">
+    <input id="taskInput" placeholder="Nueva tarea..." />
+    <button id="addBtn">Agregar</button>
   </div>
+
+  <ul id="list"></ul>
+
+  <h3>Logs</h3>
+  <div class="log" id="log"></div>
 </div>
 
-<!-- HISTORIAL -->
-<div id="entriesPanel" class="modal">
-  <div class="box">
-    <h2 id="entryTitle"></h2>
-    <div id="entriesMeta" class="hint"></div>
-    <div id="entriesContainer" style="margin-top:8px;"></div>
-    <div style="display:flex;justify-content:space-between;margin-top:10px;">
-      <button class="btn danger" onclick="confirmDeleteTask()">Eliminar tarea</button>
-      <button class="btn gray" onclick="closeEntries()">Cerrar</button>
-    </div>
-  </div>
-</div>
+<!-- Script principal -->
+<script type="module">
+  // 🔹 Importamos los SDKs Firebase (versión modular)
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+  import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+  import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-<!-- INSIGHTS -->
-<div id="insightsPanel" class="modal">
-  <div class="box">
-    <h2 id="insightsTitle" style="color:var(--primary);margin:0 0 8px;"></h2>
-    <div id="insightsMeta" class="hint"></div>
-    <div class="kpis" id="kpiGrid"></div>
-    <canvas id="chart1" height="160"></canvas>
-    <div class="mt" style="display:flex;justify-content:flex-end;">
-      <button class="btn gray" onclick="closeInsights()">Cerrar</button>
-    </div>
-  </div>
-</div>
+  // 🔧 Tu configuración personalizada:
+  const firebaseConfig = {
+    apiKey: "AIzaSyDlJGGfe87b6SVzJ_LcRCtQ7lnSTkvQajI",
+    authDomain: "agenda-e4d10.firebaseapp.com",
+    projectId: "agenda-e4d10",
+    storageBucket: "agenda-e4d10.firebasestorage.app",
+    messagingSenderId: "537185978413",
+    appId: "1:537185978413:web:f3d2561fc7a559e33010a4",
+    measurementId: "G-R3R4S8JK23"
+  };
 
-<script>
-let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
-let selectedTask = null;
-const $ = (q)=>document.querySelector(q);
-function save(){localStorage.setItem("tasks",JSON.stringify(tasks));}
+  // 🔥 Inicializamos Firebase
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
 
-function render(){
-  const list=$("#list");
-  list.innerHTML="";
-  tasks.forEach((t,i)=>{
-    const card=document.createElement("div");
-    card.className="card";
-    const row=document.createElement("div");
-    row.className="task-row";
-    const left=document.createElement("div");
-    left.innerHTML=`<div class="task-title">${t.name}</div>
-      <div class="task-meta">${t.type==="victory"?"Registro de Victorias/Derrotas":t.type==="money"?"Objetivo de Dinero":t.type==="count"?"Objetivo de Entradas":"Recordatorio"}</div>`;
-    const right=document.createElement("div");
-    right.className="btn-row";
-    const btn1=document.createElement("button");
-    btn1.className="btn gray";btn1.textContent="📜 Historial";
-    btn1.onclick=()=>openEntries(i);
-    const btn2=document.createElement("button");
-    btn2.className="btn";btn2.textContent="📊 Insights";
-    btn2.onclick=()=>openInsights(i);
-    right.append(btn1,btn2);
-    row.append(left,right);
-    card.append(row);
+  // 🔸 Utilidades rápidas
+  const $ = (q)=>document.querySelector(q);
+  function log(...args){ const el=$("#log"); el.textContent += args.join(" ") + "\n"; el.scrollTop = el.scrollHeight; }
 
-    // entrada inline
-    const inline=document.createElement("div");
-    inline.className="entry-inline"+(t.type==="money"?" money":"");
-    inline.innerHTML=`<input id="cmt-${i}" placeholder="Comentario...">`;
-    if(t.type==="money"){
-      inline.innerHTML+=`<input id="amt-${i}" type="number" placeholder="Monto $">`;
+  // 🔑 Estado del usuario
+  let uid = null;
+
+  // ----------------------------
+  // AUTENTICACIÓN ANÓNIMA
+  // ----------------------------
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      uid = user.uid;
+      log("✅ Conectado como:", uid);
+      await listar();
+    } else {
+      log("🕓 Iniciando sesión anónima...");
+      await signInAnonymously(auth).catch(e => log("❌ Error auth:", e.code, e.message));
     }
-    if(t.type==="victory"){
-      inline.innerHTML+=`<select id="res-${i}">
-        <option value="victoria">Victoria</option>
-        <option value="derrota">Derrota</option>
-      </select>`;
+  });
+
+  // ----------------------------
+  // AGREGAR NUEVA TAREA
+  // ----------------------------
+  async function agregar() {
+    const input = $("#taskInput");
+    const nombre = input.value.trim();
+    if (!nombre) return;
+    try {
+      const ref = collection(db, "usuarios", uid, "tareas");
+      await addDoc(ref, { nombre, createdAt: serverTimestamp() });
+      log("➕ Agregada:", nombre);
+      input.value = "";
+      await listar();
+    } catch(e) {
+      log("❌ addDoc:", e.code || e.message, e);
+      alert("Error al guardar, revisa las reglas de Firestore.");
     }
-    inline.innerHTML+=`<button class="btn" onclick="addEntry(${i})">+</button>`;
-    card.append(inline);
-    list.append(card);
-  });
-}
+  }
 
-function addEntry(i){
-  const t=tasks[i];
-  const txt=$(`#cmt-${i}`).value.trim();
-  const entry={date:new Date().toISOString(),text:txt};
-  if(t.type==="money"){
-    entry.amount=Number($(`#amt-${i}`).value||0);
-    $(`#amt-${i}`).value="";
+  // ----------------------------
+  // LISTAR TAREAS
+  // ----------------------------
+  async function listar() {
+    try {
+      const ref = collection(db, "usuarios", uid, "tareas");
+      const q = query(ref, orderBy("createdAt", "desc"));
+      const snap = await getDocs(q);
+      const ul = $("#list");
+      ul.innerHTML = "";
+      snap.forEach(d => {
+        const li = document.createElement("li");
+        li.innerHTML = `<span>${d.data().nombre || "(sin nombre)"}</span>
+                        <button data-id="${d.id}" style="background:#ef4444">Eliminar</button>`;
+        li.querySelector("button").onclick = async () => {
+          await deleteDoc(doc(db, "usuarios", uid, "tareas", d.id));
+          log("🗑️ Eliminada:", d.id);
+          await listar();
+        };
+        ul.appendChild(li);
+      });
+      log("📥 Cargadas:", snap.size, "tareas");
+    } catch(e) {
+      log("❌ getDocs:", e.code || e.message, e);
+    }
   }
-  if(t.type==="victory"){
-    entry.result=$(`#res-${i}`).value;
-  }
-  t.entries=t.entries||[];
-  t.entries.push(entry);
-  $(`#cmt-${i}`).value="";
-  save();render();
-}
 
-// HISTORIAL
-function openEntries(i){
-  selectedTask=i;
-  const t=tasks[i];
-  $("#entryTitle").textContent=t.name;
-  $("#entriesMeta").textContent=t.type;
-  const cont=$("#entriesContainer");
-  cont.innerHTML="";
-  if(!t.entries||t.entries.length===0){
-    cont.innerHTML="<p>Sin entradas aún.</p>";
-    return;
-  }
-  t.entries.slice().reverse().forEach((e,idx)=>{
-    const div=document.createElement("div");
-    div.className="entry "+(e.result==="victoria"?"victory":e.result==="derrota"?"defeat":"");
-    div.innerHTML=`<div><b>${new Date(e.date).toLocaleString()}</b><br>${e.text||""}${t.type==="money"?"<br><b>$"+(e.amount||0)+"</b>":""}${t.type==="victory"&&e.result?"<br><i>"+(e.result==="victoria"?"🟢 Victoria":"🔴 Derrota")+"</i>":""}</div><button class='btn danger' style='padding:5px 10px' onclick='deleteEntry(${t.entries.length-1-idx})'>X</button>`;
-    cont.append(div);
-  });
-  $("#entriesPanel").style.display="flex";
-}
-function deleteEntry(idx){
-  if(!confirm("¿Eliminar entrada?"))return;
-  tasks[selectedTask].entries.splice(idx,1);
-  save();openEntries(selectedTask);
-}
-function closeEntries(){$("#entriesPanel").style.display="none";selectedTask=null;}
-function confirmDeleteTask(){
-  if(selectedTask==null)return;
-  if(confirm("¿Eliminar esta tarea?")){
-    tasks.splice(selectedTask,1);save();closeEntries();render();
-  }
-}
-
-// INSIGHTS
-let chart1=null;
-function openInsights(i){
-  selectedTask=i;
-  const t=tasks[i];
-  $("#insightsTitle").textContent=`Insights — ${t.name}`;
-  $("#insightsMeta").textContent=t.type;
-  const kpi=$("#kpiGrid");kpi.innerHTML="";
-  const add=(t,v)=>{const d=document.createElement("div");d.className="kpi";d.innerHTML=`<div class='hint'>${t}</div><b>${v}</b>`;kpi.append(d);};
-  const data=t.entries||[];
-  if(t.type==="victory"){
-    const wins=data.filter(e=>e.result==="victoria").length;
-    const losses=data.filter(e=>e.result==="derrota").length;
-    const total=wins+losses;
-    const rate=total?Math.round((wins/total)*100):0;
-    add("Victorias",wins);
-    add("Derrotas",losses);
-    add("Winrate",rate+"%");
-    const ctx=$("#chart1").getContext("2d");
-    if(chart1)chart1.destroy();
-    chart1=new Chart(ctx,{type:"pie",data:{labels:["Victorias","Derrotas"],datasets:[{data:[wins,losses],backgroundColor:["#10b981","#ef4444"]}]}});
-  }else if(t.type==="money"){
-    const sum=data.reduce((s,e)=>s+(e.amount||0),0);
-    add("Total usado","$"+sum.toLocaleString());
-  }else{
-    add("Total de entradas",data.length);
-  }
-  $("#insightsPanel").style.display="flex";
-}
-function closeInsights(){
-  $("#insightsPanel").style.display="none";
-  if(chart1){chart1.destroy();chart1=null;}
-  selectedTask=null;
-}
-
-// NUEVA TAREA
-$("#btnNew").onclick=()=>$("#modalNew").style.display="flex";
-$("#cancelNew").onclick=()=>$("#modalNew").style.display="none";
-$("#createNew").onclick=()=>{
-  const name=$("#newName").value.trim();
-  const type=$("#newType").value;
-  const period=$("#newPeriod").value;
-  const limit=$("#newLimit").value.trim();
-  if(!name)return alert("Escribe un nombre.");
-  const task={name,type,period,limit:limit?Number(limit):null,entries:[]};
-  tasks.push(task);save();$("#modalNew").style.display="none";render();
-};
-render();
+  // ----------------------------
+  // EVENTOS
+  // ----------------------------
+  $("#addBtn").onclick = agregar;
+  $("#taskInput").addEventListener("keydown", (e)=>{ if(e.key==="Enter") agregar(); });
 </script>
 </body>
 </html>
