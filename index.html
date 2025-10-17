@@ -37,18 +37,6 @@
     font-weight: 800;
   }
 
-  .topbar {
-    width: 100%;
-    max-width: 760px;
-    display: flex;
-    gap: 8px;
-    margin-bottom: 14px;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .topbar .spacer { flex: 1; }
-
   .btn {
     padding: 10px 14px;
     border: none;
@@ -60,16 +48,12 @@
     transition: transform .15s ease, opacity .2s ease;
   }
   .btn:hover { transform: translateY(-1px); }
-  .btn:active { transform: translateY(0); opacity: .9; }
   .btn.gray { background: #9ca3af; }
+  .btn.danger { background: var(--danger); }
 
-  .wrap {
-    width: 100%;
-    max-width: 760px;
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
+  .topbar { width: 100%; max-width: 760px; display: flex; justify-content: flex-end; margin-bottom: 16px; }
+
+  .wrap { width: 100%; max-width: 760px; display: grid; gap: 12px; }
 
   .card {
     background: white;
@@ -81,499 +65,183 @@
   .card:hover { transform: translateY(-2px); }
 
   .task-header {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 8px;
-    align-items: center;
+    display: flex;
+    justify-content: space-between;
     cursor: pointer;
   }
   .task-title { font-weight: 700; }
-  .task-meta { font-size: .85rem; color: var(--muted); }
-
-  .progress {
-    margin-top: 8px;
-    background: #eef2ff;
-    border-radius: 10px;
-    height: 10px;
-    overflow: hidden;
-  }
-  .bar {
-    height: 100%;
-    background: linear-gradient(90deg, var(--primary), var(--secondary));
-    width: 0%;
-    transition: width .3s ease;
-  }
-  .progress-label {
-    margin-top: 6px;
-    font-size: .9rem;
-    color: var(--muted);
-  }
+  .task-meta { font-size: .85rem; color: var(--muted); margin-top: 4px; }
 
   .entry-inline {
     margin-top: 12px;
     display: grid;
-    grid-template-columns: 1fr 120px auto;
+    grid-template-columns: 1fr 100px 100px auto;
     gap: 8px;
   }
-  .entry-inline.money { grid-template-columns: 1fr 120px 120px auto; }
-
-  input[type="text"], input[type="number"], select, textarea {
-    padding: 10px;
+  input, select {
+    padding: 8px;
     border: 1px solid #c7d2fe;
-    border-radius: 10px;
-    outline: none;
-    font-size: .95rem;
-    background: #fff;
+    border-radius: 8px;
+    font-size: 0.95rem;
   }
-  input[type="number"] { -moz-appearance: textfield; }
-  input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
-  /* Modal */
-  .modal {
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,.6);
-    display: none; align-items: center; justify-content: center;
-    backdrop-filter: blur(3px);
-    padding: 16px;
-  }
-  .modal .box {
-    background: white; width: 100%; max-width: 520px;
-    border-radius: 18px; padding: 18px;
-    box-shadow: 0 12px 28px rgba(0,0,0,.15);
-    animation: pop .15s ease;
-  }
-  @keyframes pop { from{ transform: scale(.97); opacity: 0; } to{ transform: scale(1); opacity: 1; } }
-
-  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .row + .row { margin-top: 10px; }
-  .mt { margin-top: 12px; }
-
-  /* Entries panel */
-  #entriesPanel { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: none; align-items: center; justify-content: center; padding: 16px; backdrop-filter: blur(3px); }
-  #entriesBox { background: white; width: 100%; max-width: 560px; border-radius: 18px; padding: 18px; box-shadow: 0 12px 28px rgba(0,0,0,.15); }
-  #entriesBox h2 { margin: 0 0 8px; color: var(--primary); }
   .entry {
     background: #eef2ff;
     padding: 10px;
     border-radius: 10px;
     margin: 8px 0;
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 8px;
-    align-items: start;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
-  .entry small { color: var(--muted); display: block; }
-  .entry .del { background: var(--danger); padding: 8px 10px; border-radius: 10px; color: #fff; border: none; cursor: pointer; }
+  .entry.victory { background: #ecfdf5; border-left: 5px solid var(--ok); }
+  .entry.defeat { background: #fef2f2; border-left: 5px solid var(--danger); }
 
-  .panel-buttons { display: flex; gap: 8px; justify-content: space-between; margin-top: 10px; }
-  .btn.danger { background: var(--danger); }
-  .hint { font-size: .85rem; color: var(--muted); }
-  .badge {
-    display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: .75rem; font-weight: 700;
-    background: #eef2ff; color: var(--primary);
-    margin-left: 8px;
+  /* Panel */
+  #entriesPanel {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.6);
+    display: none; align-items: center; justify-content: center;
+    backdrop-filter: blur(3px);
   }
-  .badge.warn { background: #fff7ed; color: var(--warn); }
-  .badge.ok { background: #ecfdf5; color: var(--ok); }
+  #entriesBox {
+    background: white; width: 90%; max-width: 560px; border-radius: 18px;
+    padding: 20px; box-shadow: 0 12px 28px rgba(0,0,0,.15);
+  }
 </style>
 </head>
 <body>
   <h1>📅 Agenda Interactiva</h1>
-
-  <div class="topbar">
-    <div class="spacer"></div>
-    <button class="btn" id="btnNew">Nueva tarea</button>
-  </div>
+  <div class="topbar"><button class="btn" id="btnNew">Nueva tarea</button></div>
 
   <div id="list" class="wrap"></div>
 
-  <!-- MODAL Nueva Tarea -->
-  <div id="modalNew" class="modal">
-    <div class="box">
-      <h3 style="margin:0 0 8px;">Crear nueva tarea</h3>
-      <label>Nombre</label>
-      <input id="newName" type="text" placeholder="Ej: Entrenar / Leer 30 min" />
-
-      <div class="row mt">
-        <div>
-          <label>Tipo</label>
-          <select id="newType">
-            <option value="reminder">Recordatorio</option>
-            <option value="count">Objetivo / Límite de ENTRADAS</option>
-            <option value="money">Objetivo / Límite de DINERO</option>
-          </select>
-        </div>
-        <div>
-          <label>Periodo</label>
-          <select id="newPeriod">
-            <option value="daily">Diario</option>
-            <option value="weekly" selected>Semanal</option>
-            <option value="monthly">Mensual</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="row mt" id="limitRow">
-        <div>
-          <label id="limitLabel">Límite (cantidad)</label>
-          <input id="newLimit" type="number" min="0" step="1" placeholder="Ej: 5" />
-        </div>
-        <div>
-          <label class="hint" id="limitHint">Para “dinero”, el límite es en números (ej: 50000).</label>
-        </div>
-      </div>
-
-      <div class="panel-buttons mt">
-        <button class="btn gray" id="cancelNew">Cancelar</button>
-        <button class="btn" id="createNew">Crear</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- PANEL de Entradas -->
+  <!-- Panel Entradas -->
   <div id="entriesPanel">
     <div id="entriesBox">
       <h2 id="entryTitle"></h2>
-      <div id="entriesMeta" class="hint"></div>
-      <div id="entriesContainer" style="margin-top:8px;"></div>
-
-      <div class="panel-buttons">
+      <div id="entriesMeta" style="color:#6b7280;margin-bottom:8px;"></div>
+      <div id="entriesContainer"></div>
+      <div style="display:flex;justify-content:space-between;margin-top:10px;">
         <button class="btn danger" onclick="confirmDeleteTask()">Eliminar tarea</button>
         <button class="btn gray" onclick="closeEntries()">Cerrar</button>
       </div>
     </div>
   </div>
 
+  <!-- Modal Nueva tarea -->
+  <div id="modalNew" class="topbar" style="display:none;flex-direction:column;align-items:center;">
+    <div style="background:white;padding:20px;border-radius:15px;box-shadow:0 10px 20px rgba(0,0,0,.2);width:90%;max-width:400px;">
+      <h3>Nueva tarea</h3>
+      <input id="newName" placeholder="Nombre de la tarea" style="width:100%;margin-bottom:10px;">
+      <select id="newType" style="width:100%;margin-bottom:10px;">
+        <option value="reminder">Recordatorio</option>
+        <option value="count">Objetivo de Entradas</option>
+        <option value="money">Objetivo de Dinero</option>
+      </select>
+      <select id="newPeriod" style="width:100%;margin-bottom:10px;">
+        <option value="daily">Diario</option>
+        <option value="weekly">Semanal</option>
+        <option value="monthly">Mensual</option>
+      </select>
+      <input id="newLimit" type="number" placeholder="Límite (opcional)" style="width:100%;margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;">
+        <button class="btn gray" onclick="closeNew()">Cancelar</button>
+        <button class="btn" onclick="createNew()">Crear</button>
+      </div>
+    </div>
+  </div>
+
 <script>
-/* ====================== Estado ====================== */
 let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
 let selectedTask = null;
+const list = document.getElementById("list");
+function save(){localStorage.setItem("tasks",JSON.stringify(tasks));}
 
-const $ = (q) => document.querySelector(q);
-const list = $("#list");
-
-/* ====================== Utilidades de fechas ====================== */
-function startOfDay(d) {
-  const x = new Date(d);
-  x.setHours(0,0,0,0);
-  return x;
-}
-function startOfWeek(d) { // Lunes como inicio
-  const x = new Date(d);
-  const day = (x.getDay() + 6) % 7; // 0 = lunes
-  x.setHours(0,0,0,0);
-  x.setDate(x.getDate() - day);
-  return x;
-}
-function startOfMonth(d) {
-  const x = new Date(d);
-  x.setHours(0,0,0,0);
-  x.setDate(1);
-  return x;
-}
-function inPeriod(dateStr, period) {
+/* Periodos */
+function inPeriod(dateStr, period){
   const now = new Date();
   const t = new Date(dateStr);
-  const s =
-    period === "daily" ? startOfDay(now) :
-    period === "weekly" ? startOfWeek(now) :
-    startOfMonth(now);
-  return t >= s;
+  const start = new Date(now);
+  start.setHours(0,0,0,0);
+  if(period==="weekly"){start.setDate(now.getDate()-now.getDay());}
+  if(period==="monthly"){start.setDate(1);}
+  return t>=start;
 }
 
-/* ====================== Persistencia ====================== */
-function save() {
-  localStorage.setItem("tasks", JSON.stringify(tasks));
-}
-
-/* ====================== UI: Render principal ====================== */
-function render() {
-  list.innerHTML = "";
-  tasks.forEach((t, i) => {
-    const card = document.createElement("div");
-    card.className = "card";
-
-    // Header clickeable para abrir panel
-    const header = document.createElement("div");
-    header.className = "task-header";
-    header.onclick = (e)=>{ if (e.target.closest('.entry-inline')) return; openEntries(i); };
-
-    const title = document.createElement("div");
-    title.className = "task-title";
-    title.textContent = t.name;
-
-    const meta = document.createElement("div");
-    meta.className = "task-meta";
-    meta.innerHTML = getTaskMetaText(t);
-
-    const right = document.createElement("div");
-    right.innerHTML = badgeForTask(t);
-
-    header.appendChild(title);
-    header.appendChild(right);
-
+/* Render */
+function render(){
+  list.innerHTML="";
+  tasks.forEach((t,i)=>{
+    const card=document.createElement("div");
+    card.className="card";
+    const header=document.createElement("div");
+    header.className="task-header";
+    header.innerHTML=`<div class="task-title">${t.name}</div>`;
+    header.onclick=()=>openEntries(i);
     card.appendChild(header);
+
+    const meta=document.createElement("div");
+    meta.className="task-meta";
+    meta.textContent=t.type==="money"?"Dinero":"Entradas";
     card.appendChild(meta);
 
-    // Progreso (si aplica)
-    const prog = progressForTask(t);
-    if (prog) {
-      const progress = document.createElement("div");
-      progress.className = "progress";
-      const bar = document.createElement("div");
-      bar.className = "bar";
-      bar.style.width = Math.min(100, Math.round(prog.pct)) + "%";
-      progress.appendChild(bar);
-      const label = document.createElement("div");
-      label.className = "progress-label";
-      label.textContent = prog.label;
-      card.appendChild(progress);
-      card.appendChild(label);
-    }
-
-    // Entrada inline
-    const inline = document.createElement("div");
-    inline.className = "entry-inline" + (t.type === "money" ? " money" : "");
-    inline.onclick = (e)=>e.stopPropagation();
-
-    const comment = document.createElement("input");
-    comment.type = "text";
-    comment.placeholder = "Agregar entrada...";
-    comment.id = `cmt-${i}`;
-
-    let amountInput = null;
-    if (t.type === "money") {
-      amountInput = document.createElement("input");
-      amountInput.type = "number";
-      amountInput.min = "0";
-      amountInput.step = "0.01";
-      amountInput.placeholder = "Monto ($)";
-      amountInput.id = `amt-${i}`;
-      inline.appendChild(comment);
-      inline.appendChild(amountInput);
-    } else {
-      inline.appendChild(comment);
-    }
-
-    // Period quick-view
-    const periodView = document.createElement("input");
-    periodView.type = "text";
-    periodView.value = periodLabel(t.period);
-    periodView.disabled = true;
-    periodView.style.textAlign = "center";
-
-    const addBtn = document.createElement("button");
-    addBtn.className = "btn";
-    addBtn.textContent = "+";
-    addBtn.onclick = ()=> addEntryInline(i);
-
-    if (t.type === "money") {
-      inline.appendChild(periodView);
-      inline.appendChild(addBtn);
-    } else {
-      inline.appendChild(addBtn);
-    }
-
+    const inline=document.createElement("div");
+    inline.className="entry-inline";
+    inline.innerHTML=`
+      <input id="cmt-${i}" placeholder="Comentario...">
+      ${t.type==="money"?'<input id="amt-'+i+'" type="number" placeholder="$ Monto">':''}
+      <select id="res-${i}">
+        <option value="victoria">Victoria</option>
+        <option value="derrota">Derrota</option>
+      </select>
+      <button class="btn" onclick="addEntry(${i})">+</button>
+    `;
     card.appendChild(inline);
     list.appendChild(card);
   });
 }
 
-function periodLabel(p) {
-  return p === "daily" ? "Diario" : p === "weekly" ? "Semanal" : "Mensual";
-}
-function getTaskMetaText(t) {
-  if (t.type === "reminder") return "Recordatorio";
-  if (t.type === "count")   return `Objetivo/Límite de ENTRADAS • ${periodLabel(t.period)} • Límite: ${t.limit ?? "-"}`
-  if (t.type === "money")   return `Objetivo/Límite de DINERO • ${periodLabel(t.period)} • Límite: $${(t.limit ?? 0).toLocaleString()}`;
-  return "";
-}
-function badgeForTask(t) {
-  const prog = progressForTask(t);
-  if (!prog) return `<span class="badge">Sin objetivo</span>`;
-  let cls = "badge";
-  if (prog.state === "ok") cls += " ok";
-  if (prog.state === "warn") cls += " warn";
-  return `<span class="${cls}">${prog.badge}</span>`;
+/* Entradas */
+function addEntry(i){
+  const t=tasks[i];
+  const cmt=document.getElementById(`cmt-${i}`).value.trim();
+  const res=document.getElementById(`res-${i}`).value;
+  let amt=null;
+  if(t.type==="money"){
+    amt=Number(document.getElementById(`amt-${i}`).value);
+    if(isNaN(amt))return alert("Monto inválido");
+    document.getElementById(`amt-${i}`).value="";
+  }
+  const entry={text:cmt||"(sin comentario)",result:res,amount:amt,date:new Date().toISOString()};
+  t.entries=t.entries||[];
+  t.entries.push(entry);
+  document.getElementById(`cmt-${i}`).value="";
+  save(); render();
 }
 
-/* ====================== Progreso ====================== */
-function progressForTask(t) {
-  const entries = t.entries || [];
-  const nowEntries = t.period ? entries.filter(e => inPeriod(e.date, t.period)) : entries;
-
-  if (t.type === "count") {
-    const used = nowEntries.length;
-    const limit = Number(t.limit || 0);
-    if (!limit) return { pct: 0, label: `${used} entradas`, badge: `${used} / —`, state: "ok" };
-    const pct = (used / limit) * 100;
-    const state = used <= limit ? "ok" : "warn";
-    const rest = Math.max(0, limit - used);
-    const label = `${used} / ${limit} entradas • Restan ${rest}`;
-    return { pct, label, badge: `${used}/${limit}`, state };
-  }
-  if (t.type === "money") {
-    const used = nowEntries.reduce((s, e) => s + (Number(e.amount) || 0), 0);
-    const limit = Number(t.limit || 0);
-    if (!limit) return { pct: 0, label: `$${used.toLocaleString()} usados`, badge: `$${used.toLocaleString()} / —`, state: "ok" };
-    const pct = (used / limit) * 100;
-    const state = used <= limit ? "ok" : "warn";
-    const rest = Math.max(0, limit - used);
-    const label = `$${used.toLocaleString()} / $${limit.toLocaleString()} • Quedan $${rest.toLocaleString()}`;
-    return { pct, label, badge: `$${used.toLocaleString()}/$${limit.toLocaleString()}`, state };
-  }
-  // reminder
-  return null;
+/* Panel */
+function openEntries(i){
+  selectedTask=i;
+  const t=tasks[i];
+  document.getElementById("entryTitle").textContent=t.name;
+  document.getElementById("entriesMeta").textContent=`Tipo: ${t.type}`;
+  renderEntries();
+  document.getElementById("entriesPanel").style.display="flex";
 }
-
-/* ====================== Entradas ====================== */
-function addEntryInline(i) {
-  const t = tasks[i];
-  const comment = document.getElementById(`cmt-${i}`).value.trim();
-  if (t.type === "money") {
-    const amtVal = document.getElementById(`amt-${i}`).value;
-    const amount = Number(amtVal);
-    if (isNaN(amount) || amount < 0) { alert("Ingresa un monto válido (>= 0)."); return; }
-    pushEntry(t, { text: comment || "(sin comentario)", amount, date: new Date().toISOString() });
-    document.getElementById(`amt-${i}`).value = "";
-  } else {
-    if (!comment) { alert("Escribe un comentario para la entrada."); return; }
-    pushEntry(t, { text: comment, date: new Date().toISOString() });
-  }
-  document.getElementById(`cmt-${i}`).value = "";
-  save();
+function closeEntries(){
+  document.getElementById("entriesPanel").style.display="none";
+  selectedTask=null;
   render();
 }
-
-function pushEntry(task, entry) {
-  if (!task.entries) task.entries = [];
-  task.entries.push(entry);
-}
-
-/* ====================== Panel Entradas ====================== */
-function openEntries(i) {
-  selectedTask = i;
-  const t = tasks[i];
-  $("#entryTitle").textContent = t.name;
-  $("#entriesMeta").textContent = getTaskMetaText(t);
-  renderEntriesList();
-  $("#entriesPanel").style.display = "flex";
-}
-function renderEntriesList() {
-  const t = tasks[selectedTask];
-  const cont = $("#entriesContainer");
-  cont.innerHTML = "";
-  const entries = (t.entries || []).slice().reverse(); // más recientes arriba
-
-  if (entries.length === 0) {
-    cont.innerHTML = `<p class="hint" style="text-align:center;">Sin entradas aún.</p>`;
+function renderEntries(){
+  const t=tasks[selectedTask];
+  const cont=document.getElementById("entriesContainer");
+  cont.innerHTML="";
+  if(!t.entries||t.entries.length===0){
+    cont.innerHTML="<p style='color:#666;'>Sin entradas aún.</p>";
     return;
   }
-
-  entries.forEach((e, idxFromEnd) => {
-    const realIndex = (t.entries.length - 1) - idxFromEnd; // índice en arreglo original
-    const div = document.createElement("div");
-    div.className = "entry";
-    const left = document.createElement("div");
-    const date = new Date(e.date);
-    const dateText = isNaN(date) ? e.date : date.toLocaleString();
-    left.innerHTML = `<b>${dateText}</b><small>${e.text || ""}</small>${t.type === "money" ? `<small><b>Monto:</b> $${Number(e.amount||0).toLocaleString()}</small>` : ""}`;
-    const del = document.createElement("button");
-    del.className = "del";
-    del.textContent = "Eliminar";
-    del.onclick = ()=> deleteEntry(realIndex);
-    div.appendChild(left);
-    div.appendChild(del);
-    cont.appendChild(div);
-  });
-}
-function closeEntries() {
-  $("#entriesPanel").style.display = "none";
-  selectedTask = null;
-  render(); // refrescar barras/progreso
-}
-function deleteEntry(index) {
-  if (!confirm("¿Eliminar esta entrada?")) return;
-  const t = tasks[selectedTask];
-  t.entries.splice(index, 1);
-  save();
-  renderEntriesList();
-}
-
-/* ====================== Eliminar tarea ====================== */
-function confirmDeleteTask() {
-  if (selectedTask == null) return;
-  const t = tasks[selectedTask];
-  if (confirm(`¿Eliminar la tarea "${t.name}" y todas sus entradas?`)) {
-    tasks.splice(selectedTask, 1);
-    save();
-    closeEntries();
-  }
-}
-
-/* ====================== Nueva tarea (modal) ====================== */
-$("#btnNew").onclick = ()=> openNew();
-$("#cancelNew").onclick = ()=> closeNew();
-$("#createNew").onclick = ()=> createNew();
-$("#newType").onchange = handleTypeChange;
-
-function openNew() {
-  $("#newName").value = "";
-  $("#newType").value = "reminder";
-  $("#newPeriod").value = "weekly";
-  $("#newLimit").value = "";
-  handleTypeChange();
-  $("#modalNew").style.display = "flex";
-}
-function closeNew() {
-  $("#modalNew").style.display = "none";
-}
-function handleTypeChange() {
-  const type = $("#newType").value;
-  const limitRow = $("#limitRow");
-  if (type === "reminder") {
-    limitRow.style.display = "none";
-  } else {
-    limitRow.style.display = "grid";
-    $("#limitLabel").textContent = type === "money" ? "Límite de DINERO" : "Límite de ENTRADAS";
-    $("#limitHint").textContent = type === "money"
-      ? "Ingresa el tope de dinero para el período (ej: 50000)."
-      : "Cantidad máxima de entradas permitidas en el período.";
-  }
-}
-function createNew() {
-  const name = $("#newName").value.trim();
-  const type = $("#newType").value;        // reminder | count | money
-  const period = $("#newPeriod").value;    // daily | weekly | monthly
-  const limitVal = $("#newLimit").value.trim();
-
-  if (!name) { alert("Escribe un nombre para la tarea."); return; }
-
-  let limit = null;
-  if (type !== "reminder") {
-    if (limitVal === "" || isNaN(Number(limitVal)) || Number(limitVal) < 0) {
-      alert("Ingresa un límite válido (>= 0).");
-      return;
-    }
-    limit = Number(limitVal);
-  }
-
-  const task = {
-    name,
-    type,
-    period: type === "reminder" ? null : period,
-    limit: type === "reminder" ? null : limit,
-    entries: []
-  };
-
-  tasks.push(task);
-  save();
-  closeNew();
-  render();
-}
-
-/* ====================== Inicializar ====================== */
-render();
-</script>
-</body>
-</html>
+  t.entries.slice().reverse().forEach((e,idx)=>{
+    const div=document.createElement("div");
+    div.class
