@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Agenda Interactiva</title>
 
-<!-- Chart.js para los Insights -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
 <style>
@@ -34,8 +33,18 @@ h1 {
   background: linear-gradient(90deg, var(--primary), var(--secondary));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  margin-bottom: 16px;
+  margin-bottom: 10px;
 }
+.status {
+  font-size: 0.95rem;
+  margin-bottom: 16px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-weight: 600;
+}
+.status.connecting { background: #fef9c3; color: #92400e; }
+.status.connected { background: #dcfce7; color: #166534; }
+.status.error { background: #fee2e2; color: #991b1b; }
 .btn {
   background: var(--primary);
   color: white;
@@ -111,6 +120,7 @@ input, select {
 
 <body>
 <h1>📅 Agenda Interactiva</h1>
+<div id="status" class="status connecting">🕓 Conectando al usuario...</div>
 <div style="margin-bottom: 16px;">
   <button class="btn" id="btnNew">+ Nueva Tarea</button>
 </div>
@@ -186,11 +196,25 @@ let uid = null;
 let tasks = [];
 let selected = null;
 const $ = (q)=>document.querySelector(q);
+const status = $("#status");
+
+status.textContent = "🕓 Conectando al usuario...";
+status.className = "status connecting";
 
 onAuthStateChanged(auth, async (user)=>{
-  if(!user) await signInAnonymously(auth);
-  uid = user?.uid;
-  if(uid) await loadTasks();
+  try {
+    if(!user) await signInAnonymously(auth);
+    uid = user?.uid;
+    if(uid){
+      status.textContent = "✅ Conectado al usuario";
+      status.className = "status connected";
+      await loadTasks();
+    }
+  } catch (e) {
+    status.textContent = "❌ Error al conectar";
+    status.className = "status error";
+    console.error(e);
+  }
 });
 
 async function loadTasks(){
@@ -284,38 +308,4 @@ window.closeHist=()=>$("#modalHist").style.display="none";
 $("#closeHist").onclick=()=>$("#modalHist").style.display="none";
 $("#deleteTask").onclick=()=>deleteTaskFn(selected);
 
-window.openInsights = function(id){
-  const t = tasks.find(x=>x.id===id);
-  $("#insightsTitle").textContent=t.name;
-  const ctx=$("#chart").getContext("2d");
-  let data={},labels=[],colors=[];
-  if(t.type==="victory"){
-    const wins=t.entries?.filter(e=>e.result==="victoria").length||0;
-    const losses=t.entries?.filter(e=>e.result==="derrota").length||0;
-    data=[wins,losses];labels=["Victorias","Derrotas"];colors=["#10b981","#ef4444"];
-  } else if(t.type==="money"){
-    const sum=t.entries?.reduce((a,e)=>a+(e.amount||0),0)||0;
-    data=[sum];labels=["Gasto total"];colors=["#6366f1"];
-  } else data=[t.entries?.length||0],labels=["Entradas"],colors=["#6366f1"];
-  if(window.chart1) window.chart1.destroy();
-  window.chart1=new Chart(ctx,{type:"pie",data:{labels,datasets:[{data,backgroundColor:colors}]}});
-  $("#modalInsights").style.display="flex";
-}
-$("#closeInsights").onclick=()=>$("#modalInsights").style.display="none";
-
-$("#btnNew").onclick=()=>$("#modalNew").style.display="flex";
-$("#cancelNew").onclick=()=>$("#modalNew").style.display="none";
-$("#createNew").onclick=async()=>{
-  const name=$("#taskName").value.trim();
-  const type=$("#taskType").value;
-  const period=$("#taskPeriod").value;
-  const limit=$("#taskLimit").value;
-  if(!name)return alert("Escribe un nombre");
-  const task={name,type,period,limit:limit?Number(limit):null,entries:[]};
-  await saveTask(task);
-  $("#modalNew").style.display="none";
-  $("#taskName").value="";render();
-};
-</script>
-</body>
-</html>
+window.openInsights =
