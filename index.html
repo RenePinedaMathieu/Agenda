@@ -4,728 +4,336 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Agenda Interactiva</title>
-<!-- Chart.js para Insights -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
-  :root {
-    --primary: #6366f1;
-    --secondary: #a5b4fc;
-    --background: #f5f7ff;
-    --text: #1f2937;
-    --muted: #6b7280;
-    --danger: #ef4444;
-    --ok: #10b981;
-    --warn: #f59e0b;
-  }
-
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    font-family: "Inter", "Segoe UI", sans-serif;
-    background: var(--background);
-    color: var(--text);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 24px 12px 64px;
-  }
-
-  h1 {
-    font-size: 1.8rem;
-    background: linear-gradient(90deg, var(--primary), var(--secondary));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    margin-bottom: 16px;
-    font-weight: 800;
-  }
-
-  .btn {
-    padding: 10px 14px;
-    border: none;
-    border-radius: 12px;
-    background: var(--primary);
-    color: white;
-    font-weight: 700;
-    cursor: pointer;
-    transition: transform .15s ease, opacity .2s ease;
-  }
-  .btn:hover { transform: translateY(-1px); }
-  .btn.gray { background: #9ca3af; }
-  .btn.danger { background: var(--danger); }
-
-  .topbar { width: 100%; max-width: 900px; display: flex; justify-content: flex-end; margin-bottom: 16px; }
-
-  .wrap { width: 100%; max-width: 900px; display: grid; gap: 12px; }
-
-  .card {
-    background: white;
-    border-radius: 16px;
-    padding: 16px;
-    box-shadow: 0 6px 18px rgba(99,102,241,.08);
-    transition: transform .15s ease;
-  }
-  .card:hover { transform: translateY(-2px); }
-
-  .task-row {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 8px; align-items: center;
-  }
-  .task-title { font-weight: 800; font-size: 1.05rem; }
-  .task-meta { font-size: .85rem; color: var(--muted); margin-top: 4px; }
-
-  .btn-row {
-    display: flex; gap: 8px; flex-wrap: wrap;
-  }
-
-  .progress { margin-top: 10px; background: #eef2ff; border-radius: 10px; height: 10px; overflow: hidden; }
-  .bar { height: 100%; background: linear-gradient(90deg, var(--primary), var(--secondary)); width: 0%; transition: width .3s ease; }
-  .progress-label { margin-top: 6px; font-size: .9rem; color: var(--muted); }
-
-  .entry-inline {
-    margin-top: 12px;
-    display: grid;
-    grid-template-columns: 1fr 120px 120px auto;
-    gap: 8px;
-  }
-  .entry-inline.money { grid-template-columns: 1fr 120px 120px 120px auto; }
-
-  input[type="text"], input[type="number"], select, textarea {
-    padding: 10px;
-    border: 1px solid #c7d2fe;
-    border-radius: 10px;
-    outline: none;
-    font-size: .95rem;
-    background: #fff;
-  }
-
-  /* Modal base */
-  .modal {
-    position: fixed; inset: 0; background: rgba(0,0,0,.6);
-    display: none; align-items: center; justify-content: center;
-    backdrop-filter: blur(3px); padding: 16px;
-  }
-  .modal .box {
-    background: white; width: 100%; max-width: 600px;
-    border-radius: 18px; padding: 18px;
-    box-shadow: 0 12px 28px rgba(0,0,0,.15);
-    animation: pop .15s ease;
-  }
-  @keyframes pop { from{ transform: scale(.97); opacity: 0; } to{ transform: scale(1); opacity: 1; } }
-
-  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .row + .row { margin-top: 10px; }
-  .mt { margin-top: 12px; }
-
-  /* Panel Entradas */
-  #entriesBox h2 { margin: 0 0 8px; color: var(--primary); }
-  .entry {
-    background: #eef2ff; padding: 10px; border-radius: 10px; margin: 8px 0;
-    display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: start;
-  }
-  .entry small { color: var(--muted); display: block; }
-  .entry.victory { background: #ecfdf5; border-left: 5px solid var(--ok); }
-  .entry.defeat  { background: #fef2f2; border-left: 5px solid var(--danger); }
-
-  .hint { font-size: .85rem; color: var(--muted); }
-
-  .badge {
-    display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: .75rem; font-weight: 700;
-    background: #eef2ff; color: var(--primary); margin-left: 8px;
-  }
-  .badge.warn { background: #fff7ed; color: var(--warn); }
-  .badge.ok { background: #ecfdf5; color: var(--ok); }
-
-  /* Insights layout */
-  .kpis { display: grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap: 10px; margin: 8px 0 14px; }
-  .kpi { background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 12px; padding: 12px; }
-  .kpi b { font-size: 1.1rem; }
+:root {
+  --primary: #6366f1;
+  --secondary: #a5b4fc;
+  --background: #f5f7ff;
+  --text: #1f2937;
+  --muted: #6b7280;
+  --danger: #ef4444;
+  --ok: #10b981;
+  --warn: #f59e0b;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: "Inter", "Segoe UI", sans-serif;
+  background: var(--background);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 12px 64px;
+}
+h1 {
+  font-size: 1.8rem;
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 16px;
+  font-weight: 800;
+}
+.btn {
+  padding: 10px 14px;
+  border: none;
+  border-radius: 12px;
+  background: var(--primary);
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform .15s ease, opacity .2s ease;
+}
+.btn:hover { transform: translateY(-1px); }
+.btn.gray { background: #9ca3af; }
+.btn.danger { background: var(--danger); }
+.topbar { width: 100%; max-width: 900px; display: flex; justify-content: flex-end; margin-bottom: 16px; }
+.wrap { width: 100%; max-width: 900px; display: grid; gap: 12px; }
+.card {
+  background: white;
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 6px 18px rgba(99,102,241,.08);
+  transition: transform .15s ease;
+}
+.card:hover { transform: translateY(-2px); }
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px; align-items: center;
+}
+.task-title { font-weight: 800; font-size: 1.05rem; }
+.task-meta { font-size: .85rem; color: var(--muted); margin-top: 4px; }
+.btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.progress { margin-top: 10px; background: #eef2ff; border-radius: 10px; height: 10px; overflow: hidden; }
+.bar { height: 100%; background: linear-gradient(90deg, var(--primary), var(--secondary)); width: 0%; transition: width .3s ease; }
+.progress-label { margin-top: 6px; font-size: .9rem; color: var(--muted); }
+.entry-inline {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 1fr 120px 120px auto;
+  gap: 8px;
+}
+.entry-inline.money { grid-template-columns: 1fr 120px 120px 120px auto; }
+input[type="text"], input[type="number"], select {
+  padding: 10px;
+  border: 1px solid #c7d2fe;
+  border-radius: 10px;
+  font-size: .95rem;
+}
+.modal {
+  position: fixed; inset: 0; background: rgba(0,0,0,.6);
+  display: none; align-items: center; justify-content: center;
+  backdrop-filter: blur(3px); padding: 16px;
+}
+.modal .box {
+  background: white; width: 100%; max-width: 600px;
+  border-radius: 18px; padding: 18px;
+  box-shadow: 0 12px 28px rgba(0,0,0,.15);
+  animation: pop .15s ease;
+}
+@keyframes pop { from{ transform: scale(.97); opacity: 0; } to{ transform: scale(1); opacity: 1; } }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.mt { margin-top: 12px; }
+.entry {
+  background: #eef2ff; padding: 10px; border-radius: 10px; margin: 8px 0;
+  display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: start;
+}
+.entry.victory { background: #ecfdf5; border-left: 5px solid var(--ok); }
+.entry.defeat  { background: #fef2f2; border-left: 5px solid var(--danger); }
+.hint { font-size: .85rem; color: var(--muted); }
+.badge {
+  display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: .75rem; font-weight: 700;
+  background: #eef2ff; color: var(--primary); margin-left: 8px;
+}
+.badge.warn { background: #fff7ed; color: var(--warn); }
+.badge.ok { background: #ecfdf5; color: var(--ok); }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap: 10px; margin: 8px 0 14px; }
+.kpi { background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 12px; padding: 12px; }
+.kpi b { font-size: 1.1rem; }
 </style>
 </head>
 <body>
-  <h1>📅 Agenda Interactiva</h1>
+<h1>📅 Agenda Interactiva</h1>
+<div class="topbar">
+  <button class="btn" id="btnNew">Nueva tarea</button>
+</div>
+<div id="list" class="wrap"></div>
 
-  <div class="topbar">
-    <button class="btn" id="btnNew">Nueva tarea</button>
-  </div>
-
-  <div id="list" class="wrap"></div>
-
-  <!-- MODAL Nueva Tarea -->
-  <div id="modalNew" class="modal">
-    <div class="box">
-      <h3 style="margin:0 0 8px;">Crear nueva tarea</h3>
-      <label>Nombre</label>
-      <input id="newName" type="text" placeholder="Ej: Entrenar / Leer 30 min" />
-
-      <div class="row mt">
-        <div>
-          <label>Tipo</label>
-          <select id="newType">
-            <option value="reminder">Recordatorio</option>
-            <option value="count">Objetivo / Límite de ENTRADAS</option>
-            <option value="money">Objetivo / Límite de DINERO</option>
-          </select>
-        </div>
-        <div>
-          <label>Periodo</label>
-          <select id="newPeriod">
-            <option value="daily">Diario</option>
-            <option value="weekly" selected>Semanal</option>
-            <option value="monthly">Mensual</option>
-            <option value="yearly">Anual</option>
-          </select>
-        </div>
+<!-- MODAL Nueva Tarea -->
+<div id="modalNew" class="modal">
+  <div class="box">
+    <h3>Crear nueva tarea</h3>
+    <label>Nombre</label>
+    <input id="newName" type="text" placeholder="Ej: Torneo semanal / Leer 30 min" />
+    <div class="row mt">
+      <div>
+        <label>Tipo</label>
+        <select id="newType">
+          <option value="reminder">Recordatorio</option>
+          <option value="count">Objetivo / Entradas</option>
+          <option value="money">Objetivo / Dinero</option>
+          <option value="victory">Registro Victoria / Derrota</option>
+        </select>
       </div>
-
-      <div class="row mt" id="limitRow">
-        <div>
-          <label id="limitLabel">Límite (cantidad)</label>
-          <input id="newLimit" type="number" min="0" step="1" placeholder="Ej: 5" />
-        </div>
-        <div>
-          <label class="hint" id="limitHint">Para “dinero”, el límite es en números (ej: 50000).</label>
-        </div>
-      </div>
-
-      <div class="mt" style="display:flex;justify-content:space-between;">
-        <button class="btn gray" id="cancelNew">Cancelar</button>
-        <button class="btn" id="createNew">Crear</button>
+      <div>
+        <label>Periodo</label>
+        <select id="newPeriod">
+          <option value="daily">Diario</option>
+          <option value="weekly" selected>Semanal</option>
+          <option value="monthly">Mensual</option>
+          <option value="yearly">Anual</option>
+        </select>
       </div>
     </div>
-  </div>
-
-  <!-- PANEL Entradas (Historial) -->
-  <div id="entriesPanel" class="modal">
-    <div id="entriesBox" class="box">
-      <h2 id="entryTitle"></h2>
-      <div id="entriesMeta" class="hint"></div>
-      <div id="entriesContainer" style="margin-top:8px;"></div>
-
-      <div style="display:flex;justify-content:space-between;margin-top:10px;">
-        <button class="btn danger" onclick="confirmDeleteTask()">Eliminar tarea</button>
-        <button class="btn gray" onclick="closeEntries()">Cerrar</button>
+    <div class="row mt" id="limitRow">
+      <div>
+        <label id="limitLabel">Límite</label>
+        <input id="newLimit" type="number" min="0" step="1" placeholder="Ej: 5" />
+      </div>
+      <div>
+        <label class="hint" id="limitHint">Opcional: define un límite numérico.</label>
       </div>
     </div>
-  </div>
-
-  <!-- PANEL Insights -->
-  <div id="insightsPanel" class="modal">
-    <div class="box">
-      <h2 id="insightsTitle" style="margin:0 0 8px; color:var(--primary);"></h2>
-      <div id="insightsMeta" class="hint"></div>
-
-      <div class="kpis" id="kpiGrid"></div>
-
-      <div style="display:grid; gap:14px;">
-        <canvas id="chart1" height="160"></canvas>
-        <canvas id="chart2" height="160"></canvas>
-      </div>
-
-      <div class="mt" style="display:flex;justify-content:flex-end;gap:8px;">
-        <button class="btn gray" onclick="closeInsights()">Cerrar</button>
-      </div>
+    <div class="mt" style="display:flex;justify-content:space-between;">
+      <button class="btn gray" id="cancelNew">Cancelar</button>
+      <button class="btn" id="createNew">Crear</button>
     </div>
   </div>
+</div>
+
+<!-- HISTORIAL -->
+<div id="entriesPanel" class="modal">
+  <div class="box">
+    <h2 id="entryTitle"></h2>
+    <div id="entriesMeta" class="hint"></div>
+    <div id="entriesContainer" style="margin-top:8px;"></div>
+    <div style="display:flex;justify-content:space-between;margin-top:10px;">
+      <button class="btn danger" onclick="confirmDeleteTask()">Eliminar tarea</button>
+      <button class="btn gray" onclick="closeEntries()">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- INSIGHTS -->
+<div id="insightsPanel" class="modal">
+  <div class="box">
+    <h2 id="insightsTitle" style="color:var(--primary);margin:0 0 8px;"></h2>
+    <div id="insightsMeta" class="hint"></div>
+    <div class="kpis" id="kpiGrid"></div>
+    <canvas id="chart1" height="160"></canvas>
+    <div class="mt" style="display:flex;justify-content:flex-end;">
+      <button class="btn gray" onclick="closeInsights()">Cerrar</button>
+    </div>
+  </div>
+</div>
 
 <script>
-/* ====================== Estado ====================== */
 let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
 let selectedTask = null;
-const $ = (q) => document.querySelector(q);
-const list = $("#list");
+const $ = (q)=>document.querySelector(q);
+function save(){localStorage.setItem("tasks",JSON.stringify(tasks));}
 
-/* Charts cleanup */
-let chart1 = null, chart2 = null;
-
-/* ====================== Fechas y periodos ====================== */
-function startOfDay(d){ const x=new Date(d); x.setHours(0,0,0,0); return x; }
-function startOfWeek(d){ const x=new Date(d); const day=(x.getDay()+6)%7; x.setHours(0,0,0,0); x.setDate(x.getDate()-day); return x; } // lunes
-function startOfMonth(d){ const x=new Date(d); x.setHours(0,0,0,0); x.setDate(1); return x; }
-function startOfYear(d){ const x=new Date(d); x.setHours(0,0,0,0); x.setMonth(0,1); return x; }
-
-function inPeriod(dateStr, period){
-  const now = new Date();
-  const t = new Date(dateStr);
-  const s =
-    period === "daily" ? startOfDay(now) :
-    period === "weekly" ? startOfWeek(now) :
-    period === "monthly" ? startOfMonth(now) :
-    startOfYear(now);
-  return t >= s;
-}
-
-function periodLabel(p){
-  return p === "daily" ? "Diario" :
-         p === "weekly" ? "Semanal" :
-         p === "monthly" ? "Mensual" : "Anual";
-}
-
-/* ====================== Persistencia ====================== */
-function save(){ localStorage.setItem("tasks", JSON.stringify(tasks)); }
-
-/* ====================== Progreso ====================== */
-function progressForTask(t){
-  const entries = t.entries || [];
-  const nowEntries = t.period ? entries.filter(e => inPeriod(e.date, t.period)) : entries;
-
-  if (t.type === "count") {
-    const used = nowEntries.length;
-    const limit = Number(t.limit || 0);
-    if (!limit) return { pct: 0, label: `${used} entradas`, badge: `${used} / —`, state: "ok" };
-    const pct = (used / limit) * 100;
-    const state = used <= limit ? "ok" : "warn";
-    const rest = Math.max(0, limit - used);
-    const label = `${used} / ${limit} entradas (${periodLabel(t.period)}) • Restan ${rest}`;
-    return { pct, label, badge: `${used}/${limit}`, state };
-  }
-  if (t.type === "money") {
-    const used = nowEntries.reduce((s, e) => s + (Number(e.amount) || 0), 0);
-    const limit = Number(t.limit || 0);
-    if (!limit) return { pct: 0, label: `$${used.toLocaleString()} usados`, badge: `$${used.toLocaleString()} / —`, state: "ok" };
-    const pct = (used / limit) * 100;
-    const state = used <= limit ? "ok" : "warn";
-    const rest = Math.max(0, limit - used);
-    const label = `$${used.toLocaleString()} / $${limit.toLocaleString()} (${periodLabel(t.period)}) • Quedan $${rest.toLocaleString()}`;
-    return { pct, label, badge: `$${used.toLocaleString()}/$${limit.toLocaleString()}`, state };
-  }
-  return null; // reminder
-}
-
-function getTaskMetaText(t){
-  if (t.type === "reminder") return "Recordatorio";
-  if (t.type === "count")   return `Objetivo/Límite de ENTRADAS • ${periodLabel(t.period)} • Límite: ${t.limit ?? "—"}`;
-  if (t.type === "money")   return `Objetivo/Límite de DINERO • ${periodLabel(t.period)} • Límite: $${(t.limit ?? 0).toLocaleString()}`;
-  return "";
-}
-
-function badgeForTask(t){
-  const prog = progressForTask(t);
-  if (!prog) return `<span class="badge">Sin objetivo</span>`;
-  let cls = "badge";
-  if (prog.state === "ok") cls += " ok";
-  if (prog.state === "warn") cls += " warn";
-  return `<span class="${cls}">${prog.badge}</span>`;
-}
-
-/* ====================== Render Principal ====================== */
 function render(){
-  list.innerHTML = "";
-  tasks.forEach((t, i) => {
-    const card = document.createElement("div");
-    card.className = "card";
-
-    // header
-    const row = document.createElement("div");
-    row.className = "task-row";
-
-    const left = document.createElement("div");
-    const title = document.createElement("div");
-    title.className = "task-title";
-    title.textContent = t.name;
-
-    const meta = document.createElement("div");
-    meta.className = "task-meta";
-    meta.innerHTML = getTaskMetaText(t);
-
-    left.appendChild(title);
-    left.appendChild(meta);
-
-    const right = document.createElement("div");
-    right.className = "btn-row";
-    const btnHistory = document.createElement("button");
-    btnHistory.className = "btn gray";
-    btnHistory.textContent = "📜 Historial";
-    btnHistory.onclick = () => openEntries(i);
-
-    const btnInsights = document.createElement("button");
-    btnInsights.className = "btn";
-    btnInsights.textContent = "📊 Insights";
-    btnInsights.onclick = () => openInsights(i);
-
-    right.appendChild(btnHistory);
-    right.appendChild(btnInsights);
-
-    row.appendChild(left);
-    row.appendChild(right);
-    card.appendChild(row);
-
-    // badge/progreso
-    const prog = progressForTask(t);
-    if (prog) {
-      const progress = document.createElement("div");
-      progress.className = "progress";
-      const bar = document.createElement("div");
-      bar.className = "bar";
-      bar.style.width = Math.min(100, Math.round(prog.pct)) + "%";
-      progress.appendChild(bar);
-      const label = document.createElement("div");
-      label.className = "progress-label";
-      label.innerHTML = `${prog.label} ${badgeForTask(t)}`;
-      card.appendChild(progress);
-      card.appendChild(label);
-    }
+  const list=$("#list");
+  list.innerHTML="";
+  tasks.forEach((t,i)=>{
+    const card=document.createElement("div");
+    card.className="card";
+    const row=document.createElement("div");
+    row.className="task-row";
+    const left=document.createElement("div");
+    left.innerHTML=`<div class="task-title">${t.name}</div>
+      <div class="task-meta">${t.type==="victory"?"Registro de Victorias/Derrotas":t.type==="money"?"Objetivo de Dinero":t.type==="count"?"Objetivo de Entradas":"Recordatorio"}</div>`;
+    const right=document.createElement("div");
+    right.className="btn-row";
+    const btn1=document.createElement("button");
+    btn1.className="btn gray";btn1.textContent="📜 Historial";
+    btn1.onclick=()=>openEntries(i);
+    const btn2=document.createElement("button");
+    btn2.className="btn";btn2.textContent="📊 Insights";
+    btn2.onclick=()=>openInsights(i);
+    right.append(btn1,btn2);
+    row.append(left,right);
+    card.append(row);
 
     // entrada inline
-    const inline = document.createElement("div");
-    inline.className = "entry-inline" + (t.type === "money" ? " money" : "");
-
-    const comment = document.createElement("input");
-    comment.type = "text";
-    comment.placeholder = "Agregar entrada...";
-    comment.id = `cmt-${i}`;
-    inline.appendChild(comment);
-
-    if (t.type === "money") {
-      const amountInput = document.createElement("input");
-      amountInput.type = "number";
-      amountInput.min = "0";
-      amountInput.step = "0.01";
-      amountInput.placeholder = "Monto ($)";
-      amountInput.id = `amt-${i}`;
-      inline.appendChild(amountInput);
+    const inline=document.createElement("div");
+    inline.className="entry-inline"+(t.type==="money"?" money":"");
+    inline.innerHTML=`<input id="cmt-${i}" placeholder="Comentario...">`;
+    if(t.type==="money"){
+      inline.innerHTML+=`<input id="amt-${i}" type="number" placeholder="Monto $">`;
     }
-
-    const resultSel = document.createElement("select");
-    resultSel.id = `res-${i}`;
-    resultSel.innerHTML = `
-      <option value="victoria">Victoria</option>
-      <option value="derrota">Derrota</option>
-      <option value="na">N/A</option>
-    `;
-    inline.appendChild(resultSel);
-
-    const periodView = document.createElement("input");
-    periodView.type = "text";
-    periodView.value = t.period ? periodLabel(t.period) : "—";
-    periodView.disabled = true;
-    periodView.style.textAlign = "center";
-    if (t.type === "money") inline.appendChild(periodView);
-
-    const addBtn = document.createElement("button");
-    addBtn.className = "btn";
-    addBtn.textContent = "+";
-    addBtn.onclick = () => addEntryInline(i);
-    inline.appendChild(addBtn);
-
-    card.appendChild(inline);
-    list.appendChild(card);
+    if(t.type==="victory"){
+      inline.innerHTML+=`<select id="res-${i}">
+        <option value="victoria">Victoria</option>
+        <option value="derrota">Derrota</option>
+      </select>`;
+    }
+    inline.innerHTML+=`<button class="btn" onclick="addEntry(${i})">+</button>`;
+    card.append(inline);
+    list.append(card);
   });
 }
 
-/* ====================== Entradas ====================== */
-function addEntryInline(i){
-  const t = tasks[i];
-  const cmt = $(`#cmt-${i}`).value.trim();
-  const res = $(`#res-${i}`).value;
-  let amt = null;
-
-  if (t.type === "money") {
-    const raw = $(`#amt-${i}`).value;
-    amt = Number(raw);
-    if (isNaN(amt) || amt < 0) return alert("Ingresa un monto válido (>= 0).");
-    $(`#amt-${i}`).value = "";
+function addEntry(i){
+  const t=tasks[i];
+  const txt=$(`#cmt-${i}`).value.trim();
+  const entry={date:new Date().toISOString(),text:txt};
+  if(t.type==="money"){
+    entry.amount=Number($(`#amt-${i}`).value||0);
+    $(`#amt-${i}`).value="";
   }
-
-  if (!cmt && t.type !== "money") return alert("Escribe un comentario para la entrada.");
-
-  const entry = {
-    text: cmt || (t.type === "money" ? "(sin comentario)" : ""),
-    result: res,                 // "victoria" | "derrota" | "na"
-    amount: t.type === "money" ? amt : undefined,
-    date: new Date().toISOString()
-  };
-
-  t.entries = t.entries || [];
+  if(t.type==="victory"){
+    entry.result=$(`#res-${i}`).value;
+  }
+  t.entries=t.entries||[];
   t.entries.push(entry);
-
-  $(`#cmt-${i}`).value = "";
-  save(); render();
+  $(`#cmt-${i}`).value="";
+  save();render();
 }
 
-/* ====================== Panel Entradas (Historial) ====================== */
+// HISTORIAL
 function openEntries(i){
-  selectedTask = i;
-  const t = tasks[i];
-  $("#entryTitle").textContent = t.name;
-  $("#entriesMeta").textContent = getTaskMetaText(t);
-  renderEntriesList();
-  $("#entriesPanel").style.display = "flex";
-}
-function renderEntriesList(){
-  const t = tasks[selectedTask];
-  const cont = $("#entriesContainer");
-  cont.innerHTML = "";
-  const entries = (t.entries || []).slice().reverse();
-
-  if (entries.length === 0) {
-    cont.innerHTML = `<p class="hint" style="text-align:center;">Sin entradas aún.</p>`;
+  selectedTask=i;
+  const t=tasks[i];
+  $("#entryTitle").textContent=t.name;
+  $("#entriesMeta").textContent=t.type;
+  const cont=$("#entriesContainer");
+  cont.innerHTML="";
+  if(!t.entries||t.entries.length===0){
+    cont.innerHTML="<p>Sin entradas aún.</p>";
     return;
   }
-
-  entries.forEach((e, idxFromEnd) => {
-    const realIndex = (t.entries.length - 1) - idxFromEnd;
-    const div = document.createElement("div");
-    div.className = "entry " + (e.result === "victoria" ? "victory" : e.result === "derrota" ? "defeat" : "");
-    const date = new Date(e.date);
-    const dateText = isNaN(date) ? e.date : date.toLocaleString();
-
-    const left = document.createElement("div");
-    left.innerHTML = `
-      <b>${dateText}</b>
-      ${e.text ? `<small>${e.text}</small>` : ""}
-      ${t.type === "money" ? `<small><b>Monto:</b> $${Number(e.amount||0).toLocaleString()}</small>` : ""}
-      ${e.result && e.result!=="na" ? `<small><i>${e.result==="victoria"?"🟢 Victoria":"🔴 Derrota"}</i></small>` : ""}
-    `;
-
-    const del = document.createElement("button");
-    del.className = "btn danger";
-    del.style.padding = "6px 10px";
-    del.textContent = "Eliminar";
-    del.onclick = () => deleteEntry(realIndex);
-
-    div.appendChild(left);
-    div.appendChild(del);
-    cont.appendChild(div);
+  t.entries.slice().reverse().forEach((e,idx)=>{
+    const div=document.createElement("div");
+    div.className="entry "+(e.result==="victoria"?"victory":e.result==="derrota"?"defeat":"");
+    div.innerHTML=`<div><b>${new Date(e.date).toLocaleString()}</b><br>${e.text||""}${t.type==="money"?"<br><b>$"+(e.amount||0)+"</b>":""}${t.type==="victory"&&e.result?"<br><i>"+(e.result==="victoria"?"🟢 Victoria":"🔴 Derrota")+"</i>":""}</div><button class='btn danger' style='padding:5px 10px' onclick='deleteEntry(${t.entries.length-1-idx})'>X</button>`;
+    cont.append(div);
   });
+  $("#entriesPanel").style.display="flex";
 }
-function deleteEntry(index){
-  if (!confirm("¿Eliminar esta entrada?")) return;
-  const t = tasks[selectedTask];
-  t.entries.splice(index, 1);
-  save(); renderEntriesList();
+function deleteEntry(idx){
+  if(!confirm("¿Eliminar entrada?"))return;
+  tasks[selectedTask].entries.splice(idx,1);
+  save();openEntries(selectedTask);
 }
-function closeEntries(){
-  $("#entriesPanel").style.display = "none";
-  selectedTask = null;
-  render();
-}
+function closeEntries(){$("#entriesPanel").style.display="none";selectedTask=null;}
 function confirmDeleteTask(){
-  if (selectedTask == null) return;
-  const t = tasks[selectedTask];
-  if (confirm(`¿Eliminar la tarea "${t.name}" y todas sus entradas?`)) {
-    tasks.splice(selectedTask, 1);
-    save();
-    closeEntries();
+  if(selectedTask==null)return;
+  if(confirm("¿Eliminar esta tarea?")){
+    tasks.splice(selectedTask,1);save();closeEntries();render();
   }
 }
 
-/* ====================== Insights ====================== */
+// INSIGHTS
+let chart1=null;
 function openInsights(i){
-  selectedTask = i;
-  const t = tasks[i];
-  $("#insightsTitle").textContent = `Insights — ${t.name}`;
-  $("#insightsMeta").textContent  = getTaskMetaText(t);
-
-  // KPIs
-  const k = buildKPIs(t);
-  renderKPIs(k);
-
-  // Charts
-  buildCharts(t, k);
-
-  $("#insightsPanel").style.display = "flex";
+  selectedTask=i;
+  const t=tasks[i];
+  $("#insightsTitle").textContent=`Insights — ${t.name}`;
+  $("#insightsMeta").textContent=t.type;
+  const kpi=$("#kpiGrid");kpi.innerHTML="";
+  const add=(t,v)=>{const d=document.createElement("div");d.className="kpi";d.innerHTML=`<div class='hint'>${t}</div><b>${v}</b>`;kpi.append(d);};
+  const data=t.entries||[];
+  if(t.type==="victory"){
+    const wins=data.filter(e=>e.result==="victoria").length;
+    const losses=data.filter(e=>e.result==="derrota").length;
+    const total=wins+losses;
+    const rate=total?Math.round((wins/total)*100):0;
+    add("Victorias",wins);
+    add("Derrotas",losses);
+    add("Winrate",rate+"%");
+    const ctx=$("#chart1").getContext("2d");
+    if(chart1)chart1.destroy();
+    chart1=new Chart(ctx,{type:"pie",data:{labels:["Victorias","Derrotas"],datasets:[{data:[wins,losses],backgroundColor:["#10b981","#ef4444"]}]}});
+  }else if(t.type==="money"){
+    const sum=data.reduce((s,e)=>s+(e.amount||0),0);
+    add("Total usado","$"+sum.toLocaleString());
+  }else{
+    add("Total de entradas",data.length);
+  }
+  $("#insightsPanel").style.display="flex";
 }
 function closeInsights(){
-  $("#insightsPanel").style.display = "none";
-  // destruir charts para evitar leaks
-  if (chart1) { chart1.destroy(); chart1 = null; }
-  if (chart2) { chart2.destroy(); chart2 = null; }
-  selectedTask = null;
-  render();
+  $("#insightsPanel").style.display="none";
+  if(chart1){chart1.destroy();chart1=null;}
+  selectedTask=null;
 }
 
-function buildKPIs(t){
-  const all = t.entries || [];
-  const inP = t.period ? all.filter(e => inPeriod(e.date, t.period)) : all;
-
-  const wins  = inP.filter(e => e.result === "victoria").length;
-  const losses= inP.filter(e => e.result === "derrota").length;
-  const total = inP.length;
-  const winRate = total ? Math.round((wins/total)*100) : 0;
-
-  const moneyUsed = inP.reduce((s,e)=> s + (Number(e.amount)||0), 0);
-  const moneyLimit = Number(t.limit||0);
-  const moneyLeft = moneyLimit ? Math.max(0, moneyLimit - moneyUsed) : null;
-  const countLimit = Number(t.limit||0);
-  const countLeft  = countLimit ? Math.max(0, countLimit - total) : null;
-
-  return { wins, losses, total, winRate, moneyUsed, moneyLimit, moneyLeft, countLimit, countLeft };
-}
-
-function renderKPIs(k){
-  const grid = $("#kpiGrid");
-  grid.innerHTML = "";
-
-  const add = (title, value) => {
-    const div = document.createElement("div");
-    div.className = "kpi";
-    div.innerHTML = `<div class="hint">${title}</div><b>${value}</b>`;
-    grid.appendChild(div);
-  };
-
-  add("Entradas en periodo", k.total);
-  add("Victorias", k.wins);
-  add("Derrotas", k.losses);
-  add("Winrate", k.winRate + "%");
-}
-
-function buildCharts(t, k){
-  const ctx1 = $("#chart1").getContext("2d");
-  const ctx2 = $("#chart2").getContext("2d");
-
-  if (chart1) chart1.destroy();
-  if (chart2) chart2.destroy();
-
-  // Chart 1: Victoria vs Derrota (pie)
-  chart1 = new Chart(ctx1, {
-    type: 'pie',
-    data: {
-      labels: ['Victorias','Derrotas','N/A'],
-      datasets: [{
-        data: [
-          k.wins,
-          k.losses,
-          (t.entries||[]).filter(e=>inPeriod(e.date, t.period)).filter(e=>!e.result || e.result==='na').length
-        ]
-      }]
-    },
-    options: {
-      plugins: { legend: { position: 'bottom' } }
-    }
-  });
-
-  // Chart 2 depende del tipo:
-  if (t.type === "money") {
-    // Doughnut usado vs restante
-    const used = k.moneyUsed;
-    const limit = k.moneyLimit || 0;
-    const left = limit ? Math.max(0, limit - used) : 0;
-    chart2 = new Chart(ctx2, {
-      type: 'doughnut',
-      data: {
-        labels: ['Usado', 'Restante'],
-        datasets: [{ data: [used, left] }]
-      },
-      options: {
-        plugins: { legend: { position: 'bottom' } }
-      }
-    });
-
-    // KPIs extra de dinero
-    if (limit) {
-      const extra = document.createElement("div");
-      extra.className = "kpi";
-      extra.innerHTML = `<div class="hint">Dinero usado</div><b>$${used.toLocaleString()}</b>`;
-      $("#kpiGrid").appendChild(extra);
-      const extra2 = document.createElement("div");
-      extra2.className = "kpi";
-      extra2.innerHTML = `<div class="hint">Límite</div><b>$${limit.toLocaleString()}</b>`;
-      $("#kpiGrid").appendChild(extra2);
-      const extra3 = document.createElement("div");
-      extra3.className = "kpi";
-      extra3.innerHTML = `<div class="hint">Restante</div><b>$${Math.max(0, limit-used).toLocaleString()}</b>`;
-      $("#kpiGrid").appendChild(extra3);
-    }
-  } else {
-    // Barras: últimas 7 unidades de tiempo por fecha (cuenta de entradas)
-    // Para simplificar, graficamos por día (últimos 7 días)
-    const days = [...Array(7)].map((_,i)=> {
-      const d = new Date(); d.setDate(d.getDate()-(6-i));
-      d.setHours(0,0,0,0); return d;
-    });
-    const counts = days.map(d => (t.entries||[]).filter(e => {
-      const ed = new Date(e.date); ed.setHours(0,0,0,0);
-      return ed.getTime() === d.getTime();
-    }).length);
-
-    chart2 = new Chart(ctx2, {
-      type: 'bar',
-      data: {
-        labels: days.map(d => `${d.getDate()}/${d.getMonth()+1}`),
-        datasets: [{ label: 'Entradas por día (últ. 7)', data: counts }]
-      },
-      options: {
-        plugins: { legend: { display: false } },
-        scales: { y: { beginAtZero: true } }
-      }
-    });
-
-    // KPIs extra de conteo si tiene límite
-    if (t.type === "count" && t.limit) {
-      const extra = document.createElement("div");
-      extra.className = "kpi";
-      extra.innerHTML = `<div class="hint">Objetivo</div><b>${t.limit} (${periodLabel(t.period)})</b>`;
-      $("#kpiGrid").appendChild(extra);
-      const extra2 = document.createElement("div");
-      extra2.className = "kpi";
-      const totalInP = (t.entries||[]).filter(e=>inPeriod(e.date, t.period)).length;
-      extra2.innerHTML = `<div class="hint">Progreso</div><b>${totalInP}/${t.limit}</b>`;
-      $("#kpiGrid").appendChild(extra2);
-    }
-  }
-}
-
-/* ====================== Nueva tarea (modal) ====================== */
-$("#btnNew").onclick = ()=> openNew();
-$("#cancelNew")?.addEventListener("click", closeNew);
-$("#createNew")?.addEventListener("click", createNew);
-$("#newType").onchange = handleTypeChange;
-
-function openNew(){
-  $("#newName").value = "";
-  $("#newType").value = "reminder";
-  $("#newPeriod").value = "weekly";
-  $("#newLimit").value = "";
-  handleTypeChange();
-  $("#modalNew").style.display = "flex";
-}
-function closeNew(){ $("#modalNew").style.display = "none"; }
-function handleTypeChange(){
-  const type = $("#newType").value;
-  const limitRow = $("#limitRow");
-  if (type === "reminder") {
-    limitRow.style.display = "none";
-  } else {
-    limitRow.style.display = "grid";
-    $("#limitLabel").textContent = type === "money" ? "Límite de DINERO" : "Límite de ENTRADAS";
-    $("#limitHint").textContent  = type === "money"
-      ? "Ingresa el tope de dinero para el período (ej: 50000)."
-      : "Cantidad máxima de entradas permitidas en el período.";
-  }
-}
-function createNew(){
-  const name = $("#newName").value.trim();
-  const type = $("#newType").value;        // reminder | count | money
-  const period = $("#newPeriod").value;    // daily | weekly | monthly | yearly
-  const limitVal = $("#newLimit").value.trim();
-
-  if (!name) return alert("Escribe un nombre para la tarea.");
-
-  let limit = null;
-  if (type !== "reminder") {
-    if (limitVal === "" || isNaN(Number(limitVal)) || Number(limitVal) < 0) {
-      alert("Ingresa un límite válido (>= 0).");
-      return;
-    }
-    limit = Number(limitVal);
-  }
-
-  const task = {
-    name,
-    type,
-    period: type === "reminder" ? null : period,
-    limit: type === "reminder" ? null : limit,
-    entries: []
-  };
-
-  tasks.push(task);
-  save();
-  closeNew();
-  render();
-}
-
-/* ====================== Init ====================== */
+// NUEVA TAREA
+$("#btnNew").onclick=()=>$("#modalNew").style.display="flex";
+$("#cancelNew").onclick=()=>$("#modalNew").style.display="none";
+$("#createNew").onclick=()=>{
+  const name=$("#newName").value.trim();
+  const type=$("#newType").value;
+  const period=$("#newPeriod").value;
+  const limit=$("#newLimit").value.trim();
+  if(!name)return alert("Escribe un nombre.");
+  const task={name,type,period,limit:limit?Number(limit):null,entries:[]};
+  tasks.push(task);save();$("#modalNew").style.display="none";render();
+};
 render();
 </script>
 </body>
