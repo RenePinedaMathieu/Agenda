@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Agenda Interactiva</title>
 
-<!-- Chart.js para gráficos -->
+<!-- Chart.js para los Insights -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
 <style>
@@ -19,50 +19,93 @@
   --danger: #ef4444;
 }
 body {
-  margin: 0; padding: 24px;
+  margin: 0;
   font-family: "Inter", system-ui, sans-serif;
-  background: var(--bg); color: var(--text);
-  display: flex; flex-direction: column; align-items: center;
+  background: var(--bg);
+  color: var(--text);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 h1 {
-  font-size: 1.8rem; font-weight: 800;
+  font-size: 1.8rem;
+  font-weight: 800;
   background: linear-gradient(90deg, var(--primary), var(--secondary));
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
   margin-bottom: 16px;
 }
 .btn {
-  background: var(--primary); color: white; border: none;
-  border-radius: 12px; padding: 10px 14px; cursor: pointer;
-  transition: transform .15s ease; font-weight: 700;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-weight: 700;
+  transition: transform .15s ease;
 }
 .btn:hover { transform: translateY(-1px); }
 .btn.gray { background: #9ca3af; }
 .btn.danger { background: var(--danger); }
 .container { width: 100%; max-width: 900px; display: grid; gap: 16px; }
 .card {
-  background: white; padding: 16px; border-radius: 16px;
+  background: white;
+  padding: 16px;
+  border-radius: 16px;
   box-shadow: 0 6px 18px rgba(99,102,241,.08);
 }
-.entry-inline { display: grid; gap: 8px; grid-template-columns: 1fr 120px auto; margin-top: 10px; }
+.entry-inline {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 1fr 120px auto;
+  margin-top: 10px;
+}
 .entry-inline.money { grid-template-columns: 1fr 120px 120px auto; }
 .entry-inline.victory { grid-template-columns: 1fr 120px auto; }
 input, select {
-  padding: 10px; border: 1px solid #cbd5e1; border-radius: 10px;
+  padding: 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
   font-size: .95rem;
 }
 .modal {
-  position: fixed; inset: 0; background: rgba(0,0,0,.5);
-  display: none; align-items: center; justify-content: center;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.5);
+  display: none;
+  align-items: center;
+  justify-content: center;
 }
 .modal .box {
-  background: white; padding: 20px; border-radius: 14px; width: 90%; max-width: 600px;
+  background: white;
+  padding: 20px;
+  border-radius: 14px;
+  width: 90%;
+  max-width: 600px;
   box-shadow: 0 10px 24px rgba(0,0,0,.15);
 }
 .entry {
-  background: #eef2ff; padding: 10px; border-radius: 10px; margin: 8px 0;
+  background: #eef2ff;
+  padding: 10px;
+  border-radius: 10px;
+  margin: 8px 0;
 }
 .entry.victory { background: #ecfdf5; border-left: 5px solid var(--ok); }
 .entry.defeat { background: #fef2f2; border-left: 5px solid var(--danger); }
+.progress-bar {
+  height: 10px;
+  background: #eef2ff;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg,var(--primary),var(--secondary));
+  transition: width .3s ease;
+}
 </style>
 </head>
 
@@ -180,18 +223,33 @@ function render(){
   tasks.forEach((t)=>{
     const card=document.createElement("div");
     card.className="card";
-    card.innerHTML=`<h3>${t.name}</h3>
-    <small>${t.type}</small><br>
-    <div class="entry-inline ${t.type}">
-      <input id="cmt-${t.id}" placeholder="Comentario...">
-      ${t.type==="money"?'<input id="amt-'+t.id+'" type="number" placeholder="$ monto">':''}
-      ${t.type==="victory"?'<select id="res-'+t.id+'"><option value="victoria">Victoria</option><option value="derrota">Derrota</option></select>':''}
-      <button class="btn" onclick="addEntry('${t.id}')">➕</button>
-    </div>
-    <div style="margin-top:10px;display:flex;gap:8px;">
-      <button class="btn gray" onclick="openHist('${t.id}')">📜 Historial</button>
-      <button class="btn" onclick="openInsights('${t.id}')">📊 Insights</button>
-    </div>`;
+
+    // 🔹 progreso visual
+    let progressHTML = "";
+    if(t.limit && t.limit > 0 && t.entries?.length){
+      let current = 0;
+      if(t.type==="count") current = t.entries.length;
+      else if(t.type==="money") current = t.entries.reduce((a,e)=>a+(e.amount||0),0);
+      const pct = Math.min(100, Math.round((current / t.limit) * 100));
+      progressHTML = `
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+        <small style="color:var(--muted);">${current} / ${t.limit} ${t.type==="money"?"$":""} (${pct}%)</small>`;
+    }
+
+    card.innerHTML=`
+      <h3>${t.name}</h3>
+      <small>${t.type}</small>
+      ${progressHTML}
+      <div class="entry-inline ${t.type}">
+        <input id="cmt-${t.id}" placeholder="Comentario...">
+        ${t.type==="money"?'<input id="amt-'+t.id+'" type="number" placeholder="$ monto">':''}
+        ${t.type==="victory"?'<select id="res-'+t.id+'"><option value="victoria">Victoria</option><option value="derrota">Derrota</option></select>':''}
+        <button class="btn" onclick="addEntry('${t.id}')">➕</button>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:8px;">
+        <button class="btn gray" onclick="openHist('${t.id}')">📜 Historial</button>
+        <button class="btn" onclick="openInsights('${t.id}')">📊 Insights</button>
+      </div>`;
     list.append(card);
   });
 }
