@@ -1,133 +1,184 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Agenda Interactiva Pro</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Agenda Interactiva</title>
 <style>
+  :root {
+    --primary: #6366f1;
+    --secondary: #a5b4fc;
+    --background: #f5f7ff;
+    --text: #1f2937;
+    --danger: #ef4444;
+  }
+
   body {
-    font-family: "Segoe UI", sans-serif;
-    background: #f5f6fa;
+    margin: 0;
+    font-family: "Inter", "Segoe UI", sans-serif;
+    background: var(--background);
+    color: var(--text);
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 20px;
+    padding: 25px 10px;
   }
 
-  h1 { color: #333; margin-bottom: 10px; }
+  h1 {
+    font-size: 1.8rem;
+    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 20px;
+    font-weight: 700;
+  }
+
+  .task-input {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    max-width: 380px;
+    margin-bottom: 20px;
+  }
 
   #taskInput {
-    padding: 10px;
-    width: 260px;
-    border-radius: 10px;
-    border: 1px solid #ccc;
+    flex: 1;
+    padding: 12px;
+    border: 1px solid #c7d2fe;
+    border-radius: 12px;
+    outline: none;
+    font-size: 1rem;
   }
 
   button {
-    margin-left: 6px;
-    padding: 10px 14px;
+    margin-left: 8px;
+    padding: 12px 16px;
     border: none;
-    border-radius: 10px;
-    background: #0078d7;
+    border-radius: 12px;
+    background: var(--primary);
     color: white;
+    font-weight: 600;
     cursor: pointer;
-    transition: background 0.3s;
+    transition: all 0.3s ease;
   }
 
-  button:hover { background: #005fa3; }
+  button:hover {
+    background: #4f46e5;
+    transform: scale(1.05);
+  }
 
   ul {
     list-style: none;
     padding: 0;
-    width: 320px;
+    width: 100%;
+    max-width: 400px;
   }
 
   li {
     background: white;
-    margin: 8px 0;
-    padding: 10px;
-    border-radius: 10px;
+    margin: 10px 0;
+    padding: 15px;
+    border-radius: 14px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+    transition: transform 0.2s;
     cursor: pointer;
   }
 
-  li span { flex: 1; }
+  li:hover {
+    transform: translateY(-3px);
+  }
 
   .delete {
-    background: #e63946;
+    background: var(--danger);
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-size: 0.9rem;
   }
-  .delete:hover { background: #b81e2b; }
 
+  /* Panel de entries */
   #entriesPanel {
     position: fixed;
     top: 0; left: 0;
     width: 100%; height: 100%;
-    background: rgba(0,0,0,0.6);
+    background: rgba(0, 0, 0, 0.6);
     display: none;
     justify-content: center;
     align-items: center;
+    backdrop-filter: blur(4px);
   }
 
   #entriesBox {
     background: white;
-    padding: 20px;
-    border-radius: 15px;
     width: 90%;
-    max-width: 400px;
-    max-height: 80%;
-    overflow-y: auto;
+    max-width: 420px;
+    border-radius: 18px;
+    padding: 20px;
+    animation: fadeIn 0.3s ease;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
   }
 
   #entriesBox h2 {
     margin-top: 0;
+    color: var(--primary);
+    text-align: center;
   }
 
   .entry {
-    background: #f2f2f2;
-    margin: 6px 0;
-    padding: 8px;
-    border-radius: 8px;
+    background: #eef2ff;
+    margin: 8px 0;
+    padding: 10px;
+    border-radius: 10px;
+    font-size: 0.95rem;
   }
 
   #newEntry {
     width: 100%;
     margin-top: 10px;
     padding: 10px;
-    border-radius: 8px;
-    border: 1px solid #ccc;
+    border-radius: 10px;
+    border: 1px solid #c7d2fe;
+    resize: none;
+    font-size: 1rem;
   }
 
-  #closePanel {
-    background: #999;
-    margin-top: 10px;
+  .panel-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 12px;
   }
-  #closePanel:hover {
-    background: #555;
+
+  @keyframes fadeIn {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
   }
 </style>
 </head>
 <body>
+  <h1>📅 Mi Agenda Interactiva</h1>
 
-<h1>📆 Mi Agenda Interactiva Pro</h1>
-<div>
-  <input id="taskInput" type="text" placeholder="Escribe una tarea...">
-  <button onclick="addTask()">Agregar</button>
-</div>
-<ul id="taskList"></ul>
-
-<!-- Panel de Entries -->
-<div id="entriesPanel">
-  <div id="entriesBox">
-    <h2 id="entryTitle"></h2>
-    <div id="entriesContainer"></div>
-    <textarea id="newEntry" placeholder="Escribe una nueva entrada..."></textarea>
-    <button onclick="addEntry()">Agregar Entry</button>
-    <button id="closePanel" onclick="closeEntries()">Cerrar</button>
+  <div class="task-input">
+    <input id="taskInput" type="text" placeholder="Agregar nueva tarea..." />
+    <button onclick="addTask()">+</button>
   </div>
-</div>
+
+  <ul id="taskList"></ul>
+
+  <!-- Entries Panel -->
+  <div id="entriesPanel">
+    <div id="entriesBox">
+      <h2 id="entryTitle"></h2>
+      <div id="entriesContainer"></div>
+      <textarea id="newEntry" placeholder="Escribe una nueva entrada..."></textarea>
+      <div class="panel-buttons">
+        <button onclick="addEntry()">Agregar</button>
+        <button style="background:#9ca3af" onclick="closeEntries()">Cerrar</button>
+      </div>
+    </div>
+  </div>
 
 <script>
 let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
@@ -166,10 +217,7 @@ function closeEntries() {
 function addEntry() {
   const text = document.getElementById("newEntry").value.trim();
   if (text === "") return;
-  const entry = {
-    text,
-    date: new Date().toLocaleString()
-  };
+  const entry = { text, date: new Date().toLocaleString() };
   tasks[selectedTask].entries.push(entry);
   document.getElementById("newEntry").value = "";
   saveTasks();
@@ -180,7 +228,7 @@ function renderEntries() {
   const container = document.getElementById("entriesContainer");
   container.innerHTML = "";
   const entries = tasks[selectedTask].entries;
-  entries.forEach(e => {
+  entries.slice().reverse().forEach(e => {
     const div = document.createElement("div");
     div.className = "entry";
     div.innerHTML = `<b>${e.date}</b><br>${e.text}`;
@@ -202,6 +250,5 @@ function saveTasks() {
   localStorage.setItem("tasks", JSON.stringify(tasks));
 }
 </script>
-
 </body>
 </html>
