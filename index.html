@@ -80,23 +80,39 @@
     margin: 10px 0;
     padding: 15px;
     border-radius: 14px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
     box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
     transition: transform 0.2s;
-    cursor: pointer;
   }
 
   li:hover {
     transform: translateY(-3px);
   }
 
-  .delete {
-    background: var(--danger);
+  .task-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+  }
+
+  .entry-inline {
+    display: flex;
+    margin-top: 10px;
+  }
+
+  .entry-inline input {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 0.95rem;
+  }
+
+  .entry-inline button {
+    margin-left: 6px;
     padding: 8px 12px;
-    border-radius: 10px;
     font-size: 0.9rem;
+    border-radius: 8px;
   }
 
   /* Panel de entries */
@@ -135,20 +151,14 @@
     font-size: 0.95rem;
   }
 
-  #newEntry {
-    width: 100%;
-    margin-top: 10px;
-    padding: 10px;
-    border-radius: 10px;
-    border: 1px solid #c7d2fe;
-    resize: none;
-    font-size: 1rem;
-  }
-
   .panel-buttons {
     display: flex;
     justify-content: space-between;
     margin-top: 12px;
+  }
+
+  .delete-task {
+    background: var(--danger);
   }
 
   @keyframes fadeIn {
@@ -172,9 +182,9 @@
     <div id="entriesBox">
       <h2 id="entryTitle"></h2>
       <div id="entriesContainer"></div>
-      <textarea id="newEntry" placeholder="Escribe una nueva entrada..."></textarea>
+
       <div class="panel-buttons">
-        <button onclick="addEntry()">Agregar</button>
+        <button onclick="confirmDelete()">Eliminar tarea</button>
         <button style="background:#9ca3af" onclick="closeEntries()">Cerrar</button>
       </div>
     </div>
@@ -195,13 +205,6 @@ function addTask() {
   document.getElementById("taskInput").value = "";
 }
 
-function deleteTask(i, event) {
-  event.stopPropagation();
-  tasks.splice(i, 1);
-  saveTasks();
-  renderTasks();
-}
-
 function openEntries(i) {
   selectedTask = i;
   document.getElementById("entryTitle").innerText = tasks[i].name;
@@ -214,20 +217,32 @@ function closeEntries() {
   selectedTask = null;
 }
 
-function addEntry() {
-  const text = document.getElementById("newEntry").value.trim();
+function confirmDelete() {
+  if (confirm("¿Seguro que quieres eliminar esta tarea?")) {
+    tasks.splice(selectedTask, 1);
+    saveTasks();
+    closeEntries();
+    renderTasks();
+  }
+}
+
+function addEntryInline(i) {
+  const input = document.getElementById(`entryInput-${i}`);
+  const text = input.value.trim();
   if (text === "") return;
   const entry = { text, date: new Date().toLocaleString() };
-  tasks[selectedTask].entries.push(entry);
-  document.getElementById("newEntry").value = "";
+  tasks[i].entries.push(entry);
+  input.value = "";
   saveTasks();
-  renderEntries();
 }
 
 function renderEntries() {
   const container = document.getElementById("entriesContainer");
   container.innerHTML = "";
   const entries = tasks[selectedTask].entries;
+  if (entries.length === 0) {
+    container.innerHTML = "<p style='text-align:center;color:#666;'>Sin entradas aún.</p>";
+  }
   entries.slice().reverse().forEach(e => {
     const div = document.createElement("div");
     div.className = "entry";
@@ -240,8 +255,21 @@ function renderTasks() {
   list.innerHTML = "";
   tasks.forEach((t, i) => {
     const li = document.createElement("li");
-    li.innerHTML = `<span>${t.name}</span> <button class="delete" onclick="deleteTask(${i}, event)">X</button>`;
-    li.onclick = () => openEntries(i);
+
+    const header = document.createElement("div");
+    header.className = "task-header";
+    header.innerHTML = `<span>${t.name}</span>`;
+    header.onclick = () => openEntries(i);
+
+    const inline = document.createElement("div");
+    inline.className = "entry-inline";
+    inline.innerHTML = `
+      <input id="entryInput-${i}" placeholder="Agregar entrada..." />
+      <button onclick="addEntryInline(${i})">+</button>
+    `;
+
+    li.appendChild(header);
+    li.appendChild(inline);
     list.appendChild(li);
   });
 }
