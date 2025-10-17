@@ -4,6 +4,10 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Agenda Interactiva</title>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
 <style>
   :root {
     --primary: #6366f1;
@@ -15,11 +19,10 @@
     --ok: #10b981;
     --warn: #f59e0b;
   }
-
   * { box-sizing: border-box; }
   body {
     margin: 0;
-    font-family: "Inter", "Segoe UI", sans-serif;
+    font-family: "Inter", "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
     background: var(--background);
     color: var(--text);
     display: flex;
@@ -27,16 +30,15 @@
     align-items: center;
     padding: 24px 12px 64px;
   }
-
   h1 {
-    font-size: 1.8rem;
+    font-size: 1.9rem;
     background: linear-gradient(90deg, var(--primary), var(--secondary));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    margin-bottom: 14px;
+    margin-bottom: 16px;
     font-weight: 800;
   }
-
+  .topbar { width: 100%; max-width: 980px; display: flex; justify-content: flex-end; margin-bottom: 16px; }
   .btn {
     padding: 10px 14px;
     border: none;
@@ -45,15 +47,18 @@
     color: white;
     font-weight: 700;
     cursor: pointer;
-    transition: transform .15s ease, opacity .2s ease;
+    transition: transform .15s ease, opacity .2s ease, background .2s ease;
   }
   .btn:hover { transform: translateY(-1px); }
   .btn.gray { background: #9ca3af; }
   .btn.danger { background: var(--danger); }
+  .btn.ghost {
+    background: #eef2ff;
+    color: var(--primary);
+    font-weight: 700;
+  }
 
-  .topbar { width: 100%; max-width: 760px; display: flex; justify-content: flex-end; margin-bottom: 16px; }
-
-  .wrap { width: 100%; max-width: 760px; display: grid; gap: 12px; }
+  .wrap { width: 100%; max-width: 980px; display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
 
   .card {
     background: white;
@@ -64,50 +69,78 @@
   }
   .card:hover { transform: translateY(-2px); }
 
-  .task-header {
-    display: flex;
-    justify-content: space-between;
-    cursor: pointer;
+  .task-top {
+    display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: start;
   }
-  .task-title { font-weight: 700; }
+  .task-title { font-weight: 800; }
   .task-meta { font-size: .85rem; color: var(--muted); margin-top: 4px; }
+  .task-actions { display: flex; gap: 8px; }
+  .task-actions .btn { padding: 8px 10px; border-radius: 10px; font-size: .9rem; }
+
+  .progress { margin-top: 8px; background: #eef2ff; border-radius: 10px; height: 10px; overflow: hidden; }
+  .bar { height: 100%; background: linear-gradient(90deg, var(--primary), var(--secondary)); width: 0%; transition: width .3s ease; }
+  .progress-label { margin-top: 6px; font-size: .9rem; color: var(--muted); }
 
   .entry-inline {
     margin-top: 12px;
     display: grid;
-    grid-template-columns: 1fr 100px 100px auto;
+    grid-template-columns: 1fr 110px 120px auto;
     gap: 8px;
   }
+  .entry-inline.money { grid-template-columns: 1fr 110px 110px 120px auto; }
   input, select {
-    padding: 8px;
+    padding: 10px;
     border: 1px solid #c7d2fe;
-    border-radius: 8px;
-    font-size: 0.95rem;
+    border-radius: 10px;
+    font-size: .95rem;
+    background: #fff;
+    outline: none;
   }
 
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: .75rem; font-weight: 700; background: #eef2ff; color: var(--primary); margin-left: 8px; }
+  .badge.warn { background: #fff7ed; color: var(--warn); }
+  .badge.ok { background: #ecfdf5; color: var(--ok); }
+
+  /* Modales */
+  .modal {
+    position: fixed; inset: 0; background: rgba(0,0,0,.6);
+    display: none; align-items: center; justify-content: center;
+    backdrop-filter: blur(3px); padding: 16px;
+  }
+  .modal .box {
+    background: white; width: 100%; max-width: 620px;
+    border-radius: 18px; padding: 18px;
+    box-shadow: 0 12px 28px rgba(0,0,0,.15);
+    animation: pop .15s ease;
+  }
+  @keyframes pop { from{ transform: scale(.97); opacity: 0; } to{ transform: scale(1); opacity: 1; } }
+
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .row + .row { margin-top: 10px; }
+  .mt { margin-top: 12px; }
+  .hint { font-size: .85rem; color: var(--muted); }
+
+  /* Panel de Entradas */
+  #entriesBox h2 { margin: 0 0 8px; color: var(--primary); }
   .entry {
     background: #eef2ff;
     padding: 10px;
     border-radius: 10px;
     margin: 8px 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: start;
   }
   .entry.victory { background: #ecfdf5; border-left: 5px solid var(--ok); }
-  .entry.defeat { background: #fef2f2; border-left: 5px solid var(--danger); }
+  .entry.defeat  { background: #fef2f2; border-left: 5px solid var(--danger); }
+  .entry .del { background: var(--danger); padding: 8px 10px; border-radius: 10px; color: #fff; border: none; cursor: pointer; }
 
-  /* Panel */
-  #entriesPanel {
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,.6);
-    display: none; align-items: center; justify-content: center;
-    backdrop-filter: blur(3px);
+  /* Panel de Insights */
+  #insightsBox h2 { margin: 0 0 8px; color: var(--primary); }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 12px; }
+  .kpi {
+    background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 12px; padding: 12px;
   }
-  #entriesBox {
-    background: white; width: 90%; max-width: 560px; border-radius: 18px;
-    padding: 20px; box-shadow: 0 12px 28px rgba(0,0,0,.15);
-  }
+  .kpi b { font-size: 1.2rem; display:block; margin-top:4px; }
+  canvas { width: 100%; height: 260px; }
 </style>
 </head>
 <body>
@@ -116,132 +149,133 @@
 
   <div id="list" class="wrap"></div>
 
-  <!-- Panel Entradas -->
-  <div id="entriesPanel">
-    <div id="entriesBox">
+  <!-- MODAL Nueva Tarea -->
+  <div id="modalNew" class="modal">
+    <div class="box">
+      <h3 style="margin:0 0 8px;">Crear nueva tarea</h3>
+      <label>Nombre</label>
+      <input id="newName" type="text" placeholder="Ej: Padel / Leer 30 min" />
+      <div class="row mt">
+        <div>
+          <label>Tipo</label>
+          <select id="newType">
+            <option value="reminder">Recordatorio</option>
+            <option value="count">Objetivo / Límite de ENTRADAS</option>
+            <option value="money">Objetivo / Límite de DINERO</option>
+          </select>
+        </div>
+        <div>
+          <label>Periodo</label>
+          <select id="newPeriod">
+            <option value="daily">Diario</option>
+            <option value="weekly" selected>Semanal</option>
+            <option value="monthly">Mensual</option>
+            <option value="yearly">Anual</option>
+          </select>
+        </div>
+      </div>
+      <div class="row mt" id="limitRow">
+        <div>
+          <label id="limitLabel">Límite (cantidad)</label>
+          <input id="newLimit" type="number" min="0" step="1" placeholder="Ej: 5" />
+        </div>
+        <div>
+          <label class="hint" id="limitHint">Para “dinero”, el límite es un número (ej: 50000).</label>
+        </div>
+      </div>
+      <div class="mt" style="display:flex; gap:8px; justify-content:flex-end;">
+        <button class="btn gray" id="cancelNew">Cancelar</button>
+        <button class="btn" id="createNew">Crear</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL Entradas -->
+  <div id="entriesPanel" class="modal">
+    <div id="entriesBox" class="box">
       <h2 id="entryTitle"></h2>
-      <div id="entriesMeta" style="color:#6b7280;margin-bottom:8px;"></div>
-      <div id="entriesContainer"></div>
-      <div style="display:flex;justify-content:space-between;margin-top:10px;">
+      <div id="entriesMeta" class="hint"></div>
+      <div id="entriesContainer" style="margin-top:8px;"></div>
+      <div class="mt" style="display:flex; gap:8px; justify-content:space-between;">
         <button class="btn danger" onclick="confirmDeleteTask()">Eliminar tarea</button>
         <button class="btn gray" onclick="closeEntries()">Cerrar</button>
       </div>
     </div>
   </div>
 
-  <!-- Modal Nueva tarea -->
-  <div id="modalNew" class="topbar" style="display:none;flex-direction:column;align-items:center;">
-    <div style="background:white;padding:20px;border-radius:15px;box-shadow:0 10px 20px rgba(0,0,0,.2);width:90%;max-width:400px;">
-      <h3>Nueva tarea</h3>
-      <input id="newName" placeholder="Nombre de la tarea" style="width:100%;margin-bottom:10px;">
-      <select id="newType" style="width:100%;margin-bottom:10px;">
-        <option value="reminder">Recordatorio</option>
-        <option value="count">Objetivo de Entradas</option>
-        <option value="money">Objetivo de Dinero</option>
-      </select>
-      <select id="newPeriod" style="width:100%;margin-bottom:10px;">
-        <option value="daily">Diario</option>
-        <option value="weekly">Semanal</option>
-        <option value="monthly">Mensual</option>
-      </select>
-      <input id="newLimit" type="number" placeholder="Límite (opcional)" style="width:100%;margin-bottom:10px;">
-      <div style="display:flex;justify-content:space-between;">
-        <button class="btn gray" onclick="closeNew()">Cancelar</button>
-        <button class="btn" onclick="createNew()">Crear</button>
+  <!-- PANEL Insights -->
+  <div id="insightsPanel" class="modal">
+    <div id="insightsBox" class="box">
+      <h2 id="insightsTitle">Insights</h2>
+      <div id="insightsMeta" class="hint"></div>
+
+      <div class="kpis" id="kpis"></div>
+
+      <div class="mt" id="charts">
+        <!-- Gráficos se inyectan aquí -->
+      </div>
+
+      <div class="mt" style="display:flex; gap:8px; justify-content:flex-end;">
+        <button class="btn gray" onclick="closeInsights()">Cerrar</button>
       </div>
     </div>
   </div>
 
 <script>
+/* ====================== Estado & helpers ====================== */
 let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
 let selectedTask = null;
-const list = document.getElementById("list");
-function save(){localStorage.setItem("tasks",JSON.stringify(tasks));}
+const $ = (q) => document.querySelector(q);
+const list = $("#list");
 
-/* Periodos */
-function inPeriod(dateStr, period){
-  const now = new Date();
+function save(){ localStorage.setItem("tasks", JSON.stringify(tasks)); }
+
+/* ====================== Fechas y períodos ====================== */
+function startOfDay(d){ const x=new Date(d); x.setHours(0,0,0,0); return x; }
+function startOfWeek(d){ const x=new Date(d); const day=(x.getDay()+6)%7; x.setHours(0,0,0,0); x.setDate(x.getDate()-day); return x; }
+function startOfMonth(d){ const x=new Date(d); x.setHours(0,0,0,0); x.setDate(1); return x; }
+function startOfYear(d){ const x=new Date(d); x.setHours(0,0,0,0); x.setMonth(0,1); return x; }
+
+function periodStart(period, refDate=new Date()){
+  if(!period) return startOfDay(refDate);
+  if(period==="daily") return startOfDay(refDate);
+  if(period==="weekly") return startOfWeek(refDate);
+  if(period==="monthly") return startOfMonth(refDate);
+  if(period==="yearly") return startOfYear(refDate);
+  return startOfDay(refDate);
+}
+function periodLabel(p) {
+  return p==="daily"?"Diario":p==="weekly"?"Semanal":p==="monthly"?"Mensual":p==="yearly"?"Anual":"—";
+}
+function inPeriod(dateStr, period, refDate=new Date()){
+  const start = periodStart(period, refDate);
   const t = new Date(dateStr);
-  const start = new Date(now);
-  start.setHours(0,0,0,0);
-  if(period==="weekly"){start.setDate(now.getDate()-now.getDay());}
-  if(period==="monthly"){start.setDate(1);}
-  return t>=start;
+  return t >= start;
 }
 
-/* Render */
+/* ====================== Render principal ====================== */
 function render(){
-  list.innerHTML="";
+  list.innerHTML = "";
   tasks.forEach((t,i)=>{
-    const card=document.createElement("div");
-    card.className="card";
-    const header=document.createElement("div");
-    header.className="task-header";
-    header.innerHTML=`<div class="task-title">${t.name}</div>`;
-    header.onclick=()=>openEntries(i);
-    card.appendChild(header);
+    const card = document.createElement("div");
+    card.className = "card";
 
-    const meta=document.createElement("div");
-    meta.className="task-meta";
-    meta.textContent=t.type==="money"?"Dinero":"Entradas";
-    card.appendChild(meta);
+    // TOP: título + acciones
+    const top = document.createElement("div");
+    top.className = "task-top";
 
-    const inline=document.createElement("div");
-    inline.className="entry-inline";
-    inline.innerHTML=`
-      <input id="cmt-${i}" placeholder="Comentario...">
-      ${t.type==="money"?'<input id="amt-'+i+'" type="number" placeholder="$ Monto">':''}
-      <select id="res-${i}">
-        <option value="victoria">Victoria</option>
-        <option value="derrota">Derrota</option>
-      </select>
-      <button class="btn" onclick="addEntry(${i})">+</button>
+    const left = document.createElement("div");
+    left.innerHTML = `
+      <div class="task-title">${t.name}</div>
+      <div class="task-meta">${metaText(t)}</div>
     `;
-    card.appendChild(inline);
-    list.appendChild(card);
-  });
-}
 
-/* Entradas */
-function addEntry(i){
-  const t=tasks[i];
-  const cmt=document.getElementById(`cmt-${i}`).value.trim();
-  const res=document.getElementById(`res-${i}`).value;
-  let amt=null;
-  if(t.type==="money"){
-    amt=Number(document.getElementById(`amt-${i}`).value);
-    if(isNaN(amt))return alert("Monto inválido");
-    document.getElementById(`amt-${i}`).value="";
-  }
-  const entry={text:cmt||"(sin comentario)",result:res,amount:amt,date:new Date().toISOString()};
-  t.entries=t.entries||[];
-  t.entries.push(entry);
-  document.getElementById(`cmt-${i}`).value="";
-  save(); render();
-}
+    const actions = document.createElement("div");
+    actions.className = "task-actions";
+    const btnHist = document.createElement("button");
+    btnHist.className = "btn ghost";
+    btnHist.textContent = "📜 Historial";
+    btnHist.onclick = ()=> openEntries(i);
 
-/* Panel */
-function openEntries(i){
-  selectedTask=i;
-  const t=tasks[i];
-  document.getElementById("entryTitle").textContent=t.name;
-  document.getElementById("entriesMeta").textContent=`Tipo: ${t.type}`;
-  renderEntries();
-  document.getElementById("entriesPanel").style.display="flex";
-}
-function closeEntries(){
-  document.getElementById("entriesPanel").style.display="none";
-  selectedTask=null;
-  render();
-}
-function renderEntries(){
-  const t=tasks[selectedTask];
-  const cont=document.getElementById("entriesContainer");
-  cont.innerHTML="";
-  if(!t.entries||t.entries.length===0){
-    cont.innerHTML="<p style='color:#666;'>Sin entradas aún.</p>";
-    return;
-  }
-  t.entries.slice().reverse().forEach((e,idx)=>{
-    const div=document.createElement("div");
-    div.class
+    const btnIns = document.createElement("button");
+    btnIns.className
