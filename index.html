@@ -1,351 +1,145 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Agenda Interactiva</title>
-
-<!-- Chart.js para los Insights -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-
-<style>
-:root {
-  --primary: #6366f1;
-  --secondary: #a5b4fc;
-  --bg: #f5f7ff;
-  --text: #1f2937;
-  --muted: #6b7280;
-  --ok: #10b981;
-  --danger: #ef4444;
-}
-body {
-  margin: 0;
-  font-family: "Inter", system-ui, sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-h1 {
-  font-size: 1.8rem;
-  font-weight: 800;
-  background: linear-gradient(90deg, var(--primary), var(--secondary));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  margin-bottom: 10px;
-}
-.status {
-  font-size: 0.95rem;
-  margin-bottom: 16px;
-  padding: 6px 12px;
-  border-radius: 8px;
-  font-weight: 600;
-}
-.status.connecting { background: #fef9c3; color: #92400e; }
-.status.connected { background: #dcfce7; color: #166534; }
-.status.error { background: #fee2e2; color: #991b1b; }
-.btn {
-  background: var(--primary);
-  color: white;
-  border: none;
-  border-radius: 12px;
-  padding: 10px 14px;
-  cursor: pointer;
-  font-weight: 700;
-  transition: transform .15s ease;
-}
-.btn:hover { transform: translateY(-1px); }
-.btn.gray { background: #9ca3af; }
-.btn.danger { background: var(--danger); }
-.container { width: 100%; max-width: 900px; display: grid; gap: 16px; }
-.card {
-  background: white;
-  padding: 16px;
-  border-radius: 16px;
-  box-shadow: 0 6px 18px rgba(99,102,241,.08);
-}
-.entry-inline {
-  display: grid;
-  gap: 8px;
-  grid-template-columns: 1fr 120px auto;
-  margin-top: 10px;
-}
-.entry-inline.money { grid-template-columns: 1fr 120px 120px auto; }
-.entry-inline.victory { grid-template-columns: 1fr 120px auto; }
-input, select {
-  padding: 10px;
-  border: 1px solid #cbd5e1;
-  border-radius: 10px;
-  font-size: .95rem;
-}
-.modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,.5);
-  display: none;
-  align-items: center;
-  justify-content: center;
-}
-.modal .box {
-  background: white;
-  padding: 20px;
-  border-radius: 14px;
-  width: 90%;
-  max-width: 600px;
-  box-shadow: 0 10px 24px rgba(0,0,0,.15);
-}
-.entry {
-  background: #eef2ff;
-  padding: 10px;
-  border-radius: 10px;
-  margin: 8px 0;
-}
-.entry.victory { background: #ecfdf5; border-left: 5px solid var(--ok); }
-.entry.defeat { background: #fef2f2; border-left: 5px solid var(--danger); }
-.progress-bar {
-  height: 10px;
-  background: #eef2ff;
-  border-radius: 8px;
-  overflow: hidden;
-  margin-top: 6px;
-}
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg,var(--primary),var(--secondary));
-  transition: width .3s ease;
-}
-</style>
+  <meta charset="UTF-8" />
+  <title>Editor de Drivers - Propuestas</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background:#f7f8fa; padding:20px; color:#222; }
+    .card { background:#fff; border-radius:12px; padding:16px; box-shadow:0 8px 24px rgba(0,0,0,.08); max-width:900px; margin:auto; }
+    h1 { font-size:1.3rem; margin-bottom:12px; }
+    select, button, input {
+      padding:8px 12px; border-radius:8px; border:1px solid #ccc; font-size:14px;
+    }
+    button { background:#4f46e5; color:white; border:none; cursor:pointer; }
+    button:disabled { background:#999; cursor:not-allowed; }
+    table { border-collapse:collapse; width:100%; margin-top:16px; }
+    th, td { border:1px solid #ddd; padding:6px 8px; text-align:center; }
+    th { background:#f0f0f5; }
+    td[contenteditable="true"] { background:#fffdf0; }
+    td:focus { outline:2px solid #4f46e5; background:#eef; }
+  </style>
 </head>
-
 <body>
-<h1>📅 Agenda Interactiva</h1>
-<div id="status" class="status connecting">🕓 Conectando al usuario...</div>
-<div style="margin-bottom: 16px;">
-  <button class="btn" id="btnNew">+ Nueva Tarea</button>
-</div>
-<div class="container" id="taskList"></div>
+  <div class="card">
+    <h1>Propuesta de Cambios - Drivers Falabella</h1>
 
-<!-- MODAL NUEVA TAREA -->
-<div class="modal" id="modalNew">
-  <div class="box">
-    <h2>Crear nueva tarea</h2>
-    <input id="taskName" placeholder="Nombre de la tarea" style="width:100%;margin-bottom:10px;">
-    <select id="taskType" style="width:100%;margin-bottom:10px;">
-      <option value="reminder">Recordatorio</option>
-      <option value="count">Objetivo / Entradas</option>
-      <option value="money">Objetivo / Dinero</option>
-      <option value="victory">Registro Victorias/Derrotas</option>
-    </select>
-    <select id="taskPeriod" style="width:100%;margin-bottom:10px;">
-      <option value="daily">Diario</option>
-      <option value="weekly" selected>Semanal</option>
-      <option value="monthly">Mensual</option>
-      <option value="yearly">Anual</option>
-    </select>
-    <input id="taskLimit" type="number" placeholder="Límite (opcional)" style="width:100%;margin-bottom:14px;">
-    <div style="text-align:right;">
-      <button class="btn gray" id="cancelNew">Cancelar</button>
-      <button class="btn" id="createNew">Crear</button>
+    <div style="margin-bottom:12px;">
+      <label>Token de acceso:</label>
+      <input id="tokenInput" placeholder="Ej: token-test-123" style="width:220px;"/>
+      <button onclick="guardarToken()">Ingresar</button>
+    </div>
+
+    <div style="margin-bottom:12px;">
+      <label>Orden:</label>
+      <select id="ordenSelect"><option value="">--Seleccione--</option></select>
+      <label style="margin-left:12px;">Driver:</label>
+      <select id="driverSelect"><option value="">--Seleccione--</option></select>
+      <button id="cargarBtn" onclick="cargarDriver()">Cargar</button>
+    </div>
+
+    <div id="tablaContainer"></div>
+    <div style="margin-top:12px;">
+      <button id="enviarBtn" disabled>Enviar propuesta</button>
     </div>
   </div>
-</div>
 
-<!-- MODAL HISTORIAL -->
-<div class="modal" id="modalHist">
-  <div class="box">
-    <h2 id="histTitle"></h2>
-    <div id="entries"></div>
-    <div style="display:flex;justify-content:space-between;margin-top:12px;">
-      <button class="btn danger" id="deleteTask">Eliminar tarea</button>
-      <button class="btn gray" id="closeHist">Cerrar</button>
-    </div>
-  </div>
-</div>
+  <script>
+    const API_URL = "http://localhost:8000"; // cambia esto a tu URL de Cloud Run luego
+    let API_KEY = "";
+    let dataEmpresas = [];
+    let ordenSel = "", driverSel = "";
 
-<!-- MODAL INSIGHTS -->
-<div class="modal" id="modalInsights">
-  <div class="box">
-    <h2 id="insightsTitle"></h2>
-    <canvas id="chart" height="180"></canvas>
-    <div style="text-align:right;margin-top:10px;">
-      <button class="btn gray" id="closeInsights">Cerrar</button>
-    </div>
-  </div>
-</div>
-
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-import { getFirestore, collection, addDoc, getDocs, setDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyDlJGGfe87b6SVzJ_LcRCtQ7lnSTkvQajI",
-  authDomain: "agenda-e4d10.firebaseapp.com",
-  projectId: "agenda-e4d10",
-  storageBucket: "agenda-e4d10.firebasestorage.app",
-  messagingSenderId: "537185978413",
-  appId: "1:537185978413:web:f3d2561fc7a559e33010a4",
-  measurementId: "G-R3R4S8JK23"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-let uid = null;
-let tasks = [];
-let selected = null;
-const $ = (q)=>document.querySelector(q);
-const status = $("#status");
-
-// Estado inicial
-status.textContent = "🕓 Conectando al usuario...";
-status.className = "status connecting";
-
-// 🔹 Autenticación estable
-onAuthStateChanged(auth, async (user)=>{
-  try {
-    if (user) {
-      uid = user.uid;
-      status.textContent = "✅ Conectado al usuario";
-      status.className = "status connected";
-      await loadTasks();
-    } else {
-      status.textContent = "🕓 Iniciando sesión anónima...";
-      status.className = "status connecting";
-      await signInAnonymously(auth);
-    }
-  } catch (e) {
-    console.error(e);
-    status.textContent = "❌ Error al conectar";
-    status.className = "status error";
-  }
-});
-
-async function loadTasks(){
-  const snap = await getDocs(collection(db,"usuarios",uid,"tareas"));
-  tasks = [];
-  snap.forEach(d=>tasks.push({id:d.id,...d.data()}));
-  render();
-}
-
-async function saveTask(t){
-  if(!t.id){
-    const ref = await addDoc(collection(db,"usuarios",uid,"tareas"),t);
-    t.id=ref.id;
-  } else {
-    await setDoc(doc(db,"usuarios",uid,"tareas",t.id),t);
-  }
-}
-
-async function deleteTaskFn(id){
-  if(!confirm("¿Eliminar esta tarea?"))return;
-  await deleteDoc(doc(db,"usuarios",uid,"tareas",id));
-  tasks = tasks.filter(x=>x.id!==id);
-  $("#modalHist").style.display="none";
-  render();
-}
-
-// ----------- Render ----------
-function render(){
-  const list=$("#taskList"); list.innerHTML="";
-  tasks.forEach((t)=>{
-    const card=document.createElement("div");
-    card.className="card";
-
-    // 🔹 progreso visual
-    let progressHTML = "";
-    if(t.limit && t.limit > 0 && t.entries?.length){
-      let current = 0;
-      if(t.type==="count") current = t.entries.length;
-      else if(t.type==="money") current = t.entries.reduce((a,e)=>a+(e.amount||0),0);
-      const pct = Math.min(100, Math.round((current / t.limit) * 100));
-      progressHTML = `
-        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
-        <small style="color:var(--muted);">${current} / ${t.limit} ${t.type==="money"?"$":""} (${pct}%)</small>`;
+    function guardarToken() {
+      API_KEY = document.getElementById("tokenInput").value.trim();
+      if (!API_KEY) return alert("Ingrese un token válido.");
+      alert("Token guardado. Cargando base...");
+      cargarCatalogo();
     }
 
-    card.innerHTML=`
-      <h3>${t.name}</h3>
-      <small>${t.type}</small>
-      ${progressHTML}
-      <div class="entry-inline ${t.type}">
-        <input id="cmt-${t.id}" placeholder="Comentario...">
-        ${t.type==="money"?'<input id="amt-'+t.id+'" type="number" placeholder="$ monto">':''}
-        ${t.type==="victory"?'<select id="res-'+t.id+'"><option value="victoria">Victoria</option><option value="derrota">Derrota</option></select>':''}
-        <button class="btn" onclick="addEntry('${t.id}')">➕</button>
-      </div>
-      <div style="margin-top:10px;display:flex;gap:8px;">
-        <button class="btn gray" onclick="openHist('${t.id}')">📜 Historial</button>
-        <button class="btn" onclick="openInsights('${t.id}')">📊 Insights</button>
-      </div>`;
-    list.append(card);
-  });
-}
+    async function cargarCatalogo() {
+      const res = await fetch(`${API_URL}/drivers-disponibles`, {
+        headers: { "Authorization": "Bearer " + API_KEY }
+      });
+      if (!res.ok) return alert("Error cargando catálogo");
+      const data = await res.json();
+      const ordenes = [...new Set(data.map(d => d.orden_estadistica))];
+      const ordenSelect = document.getElementById("ordenSelect");
+      ordenSelect.innerHTML = "<option value=''>--Seleccione--</option>" +
+        ordenes.map(o => `<option>${o}</option>`).join("");
 
-window.addEntry = async function(id){
-  const t = tasks.find(x=>x.id===id);
-  const cmt = $(`#cmt-${id}`).value.trim();
-  const entry = { text:cmt, date:new Date().toISOString() };
-  if(t.type==="money") entry.amount = Number($(`#amt-${id}`).value||0);
-  if(t.type==="victory") entry.result = $(`#res-${id}`).value;
-  t.entries = t.entries || [];
-  t.entries.push(entry);
-  await saveTask(t);
-  render();
-}
+      const driverSelect = document.getElementById("driverSelect");
+      ordenSelect.addEventListener("change", () => {
+        const seleccionada = ordenSelect.value;
+        const drivers = data.filter(d => d.orden_estadistica === seleccionada).map(d => d.nombre_driver);
+        driverSelect.innerHTML = "<option value=''>--Seleccione--</option>" +
+          drivers.map(d => `<option>${d}</option>`).join("");
+      });
+    }
 
-window.openHist = function(id){
-  const t = tasks.find(x=>x.id===id);
-  selected=id;
-  $("#histTitle").textContent=t.name;
-  const cont=$("#entries"); cont.innerHTML="";
-  if(!t.entries?.length){cont.innerHTML="<p>Sin entradas</p>";}
-  else t.entries.slice().reverse().forEach(e=>{
-    const div=document.createElement("div");
-    div.className="entry "+(e.result==="victoria"?"victory":e.result==="derrota"?"defeat":"");
-    div.innerHTML=`<b>${new Date(e.date).toLocaleString()}</b><br>${e.text||""}${t.type==="money"?"<br><b>$"+(e.amount||0)+"</b>":""}${t.type==="victory"?"<br><i>"+(e.result||"")+"</i>":""}`;
-    cont.append(div);
-  });
-  $("#modalHist").style.display="flex";
-}
-window.closeHist=()=>$("#modalHist").style.display="none";
-$("#closeHist").onclick=()=>$("#modalHist").style.display="none";
-$("#deleteTask").onclick=()=>deleteTaskFn(selected);
+    async function cargarDriver() {
+      ordenSel = document.getElementById("ordenSelect").value;
+      driverSel = document.getElementById("driverSelect").value;
+      if (!ordenSel || !driverSel) return alert("Seleccione orden y driver.");
 
-window.openInsights = function(id){
-  const t = tasks.find(x=>x.id===id);
-  $("#insightsTitle").textContent=t.name;
-  const ctx=$("#chart").getContext("2d");
-  let data={},labels=[],colors=[];
-  if(t.type==="victory"){
-    const wins=t.entries?.filter(e=>e.result==="victoria").length||0;
-    const losses=t.entries?.filter(e=>e.result==="derrota").length||0;
-    data=[wins,losses];labels=["Victorias","Derrotas"];colors=["#10b981","#ef4444"];
-  } else if(t.type==="money"){
-    const sum=t.entries?.reduce((a,e)=>a+(e.amount||0),0)||0;
-    data=[sum];labels=["Gasto total"];colors=["#6366f1"];
-  } else data=[t.entries?.length||0],labels=["Entradas"],colors=["#6366f1"];
-  if(window.chart1) window.chart1.destroy();
-  window.chart1=new Chart(ctx,{type:"pie",data:{labels,datasets:[{data,backgroundColor:colors}]}});
-  $("#modalInsights").style.display="flex";
-}
-$("#closeInsights").onclick=()=>$("#modalInsights").style.display="none";
+      const res = await fetch(`${API_URL}/mis-drivers?orden=${encodeURIComponent(ordenSel)}&driver=${encodeURIComponent(driverSel)}`, {
+        headers: { "Authorization": "Bearer " + API_KEY }
+      });
+      if (!res.ok) return alert("Error al cargar driver.");
+      const data = await res.json();
 
-$("#btnNew").onclick=()=>$("#modalNew").style.display="flex";
-$("#cancelNew").onclick=()=>$("#modalNew").style.display="none";
-$("#createNew").onclick=async()=>{
-  const name=$("#taskName").value.trim();
-  const type=$("#taskType").value;
-  const period=$("#taskPeriod").value;
-  const limit=$("#taskLimit").value;
-  if(!name)return alert("Escribe un nombre");
-  const task={name,type,period,limit:limit?Number(limit):null,entries:[]};
-  await saveTask(task);
-  $("#modalNew").style.display="none";
-  $("#taskName").value="";render();
-};
-</script>
+      dataEmpresas = data.empresas;
+      renderTabla();
+    }
+
+    function renderTabla() {
+      let html = "<table><tr><th>Empresa</th><th>Porcentaje Actual</th><th>Nuevo (%)</th></tr>";
+      dataEmpresas.forEach((e, i) => {
+        html += `<tr>
+          <td>${e.empresa}</td>
+          <td>${e.porcentaje}</td>
+          <td contenteditable="true" data-index="${i}">${e.porcentaje}</td>
+        </tr>`;
+      });
+      html += "</table>";
+      document.getElementById("tablaContainer").innerHTML = html;
+      document.getElementById("enviarBtn").disabled = false;
+
+      document.querySelectorAll("td[contenteditable]").forEach(td => {
+        td.addEventListener("input", () => {
+          const idx = parseInt(td.dataset.index);
+          const val = parseFloat(td.innerText) || 0;
+          dataEmpresas[idx].nuevo = val;
+        });
+      });
+
+      document.getElementById("enviarBtn").onclick = enviarPropuesta;
+    }
+
+    async function enviarPropuesta() {
+      const total = dataEmpresas.reduce((s,e) => s + (e.nuevo ?? e.porcentaje), 0);
+      if (total > 100.001) return alert(`El total (${total.toFixed(2)}%) supera 100%`);
+
+      const payload = {
+        orden_estadistica: ordenSel,
+        nombre_driver: driverSel,
+        empresas: dataEmpresas.map(e => ({
+          empresa: e.empresa,
+          porcentaje_nuevo: e.nuevo ?? e.porcentaje
+        }))
+      };
+
+      const res = await fetch(`${API_URL}/proponer-cambio`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + API_KEY
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) return alert("Error: " + (data.detail || res.statusText));
+      alert("✅ Propuesta enviada correctamente. ID: " + data.propuesta_id);
+    }
+  </script>
 </body>
 </html>
