@@ -1,361 +1,351 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Agenda con Firebase (Auth + Firestore)</title>
-  <style>
-    :root{--bg:#0f172a;--card:#111827;--ink:#e5e7eb;--muted:#94a3b8;--brand:#22c55e;--danger:#ef4444}
-    *{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial,'Noto Sans','Apple Color Emoji','Segoe UI Emoji';background:linear-gradient(180deg,#0b1220,#0f172a);} 
-    .wrap{max-width:980px;margin:24px auto;padding:16px}
-    .card{background:var(--card);color:var(--ink);border:1px solid #1f2937;border-radius:16px;box-shadow:0 15px 40px rgba(0,0,0,.35)}
-    .row{display:grid;gap:16px}
-    .p16{padding:16px} .p24{padding:24px} .p32{padding:32px}
-    .title{font-size:22px;font-weight:700;margin:0}
-    .muted{color:var(--muted);font-size:14px}
-    .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
-    .col-6{grid-column:span 6} .col-12{grid-column:span 12}
-    @media(max-width:800px){.col-6{grid-column:span 12}}
-    input,button,textarea{width:100%;padding:12px 14px;border-radius:12px;border:1px solid #334155;background:#0b1220;color:var(--ink)}
-    input::placeholder,textarea::placeholder{color:#64748b}
-    button{cursor:pointer;background:var(--brand);border:none;color:#062b16;font-weight:700}
-    button.ghost{background:transparent;border:1px solid #334155;color:var(--ink)}
-    button.danger{background:var(--danger);color:#fff}
-    .flex{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-    .space{height:12px}
-    .list{display:grid;gap:10px}
-    .item{background:#0b1220;border:1px solid #1f2937;border-radius:12px;padding:12px}
-    .bad{color:#fca5a5} .ok{color:#86efac} .info{color:#93c5fd}
-    .tag{font-size:12px;padding:2px 8px;border-radius:999px;border:1px solid #334155;color:#cbd5e1}
-    .hdr{display:flex;justify-content:space-between;align-items:center}
-    code{background:#0b1220;border:1px solid #334155;padding:2px 6px;border-radius:8px}
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Agenda Interactiva</title>
+
+<!-- Chart.js para los Insights -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<style>
+:root {
+  --primary: #6366f1;
+  --secondary: #a5b4fc;
+  --bg: #f5f7ff;
+  --text: #1f2937;
+  --muted: #6b7280;
+  --ok: #10b981;
+  --danger: #ef4444;
+}
+body {
+  margin: 0;
+  font-family: "Inter", system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+h1 {
+  font-size: 1.8rem;
+  font-weight: 800;
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 10px;
+}
+.status {
+  font-size: 0.95rem;
+  margin-bottom: 16px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-weight: 600;
+}
+.status.connecting { background: #fef9c3; color: #92400e; }
+.status.connected { background: #dcfce7; color: #166534; }
+.status.error { background: #fee2e2; color: #991b1b; }
+.btn {
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-weight: 700;
+  transition: transform .15s ease;
+}
+.btn:hover { transform: translateY(-1px); }
+.btn.gray { background: #9ca3af; }
+.btn.danger { background: var(--danger); }
+.container { width: 100%; max-width: 900px; display: grid; gap: 16px; }
+.card {
+  background: white;
+  padding: 16px;
+  border-radius: 16px;
+  box-shadow: 0 6px 18px rgba(99,102,241,.08);
+}
+.entry-inline {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 1fr 120px auto;
+  margin-top: 10px;
+}
+.entry-inline.money { grid-template-columns: 1fr 120px 120px auto; }
+.entry-inline.victory { grid-template-columns: 1fr 120px auto; }
+input, select {
+  padding: 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  font-size: .95rem;
+}
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.5);
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+.modal .box {
+  background: white;
+  padding: 20px;
+  border-radius: 14px;
+  width: 90%;
+  max-width: 600px;
+  box-shadow: 0 10px 24px rgba(0,0,0,.15);
+}
+.entry {
+  background: #eef2ff;
+  padding: 10px;
+  border-radius: 10px;
+  margin: 8px 0;
+}
+.entry.victory { background: #ecfdf5; border-left: 5px solid var(--ok); }
+.entry.defeat { background: #fef2f2; border-left: 5px solid var(--danger); }
+.progress-bar {
+  height: 10px;
+  background: #eef2ff;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg,var(--primary),var(--secondary));
+  transition: width .3s ease;
+}
+</style>
 </head>
+
 <body>
-  <div class="wrap">
-    <div class="card p24 row">
-      <div class="hdr">
-        <h1 class="title">Agenda • Firebase</h1>
-        <div class="muted">Auth (email/clave) + Firestore en tiempo real</div>
-      </div>
+<h1>📅 Agenda Interactiva</h1>
+<div id="status" class="status connecting">🕓 Conectando al usuario...</div>
+<div style="margin-bottom: 16px;">
+  <button class="btn" id="btnNew">+ Nueva Tarea</button>
+</div>
+<div class="container" id="taskList"></div>
 
-      <!-- ⚙️ Paso 1: Pegar tu config de Firebase -->
-      <details>
-        <summary class="muted">Cómo configurar (click para ver)</summary>
-        <div class="p16">
-          <ol>
-            <li>Crea un proyecto en <b>Firebase</b> → Habilita <b>Authentication</b> (Email/Password).</li>
-            <li>Habilita <b>Cloud Firestore</b> en modo producción.</li>
-            <li>En <b>Project settings → Your apps → Web app</b> copia el objeto <code>firebaseConfig</code> y pégalo abajo donde dice <i>// TODO</i>.</li>
-            <li>(Opcional) Reglas de Firestore iniciales seguras:
-              <pre style="white-space:pre-wrap; color:#cbd5e1; background:#0b1220; border:1px solid #334155; padding:10px; border-radius:8px">rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /users/{uid} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
-      match /agenda/{docId} {
-        allow read, write: if request.auth != null && request.auth.uid == uid;
-      }
-    }
-  }
-}</pre>
-            </li>
-          </ol>
-        </div>
-      </details>
-
-      <div class="space"></div>
-
-      <!-- 🔐 Auth -->
-      <div id="authCard" class="grid">
-        <div class="col-6">
-          <div class="p16" style="background:#0b1220;border-radius:12px;border:1px solid #1f2937">
-            <h3 style="margin-top:0">Crear cuenta</h3>
-            <div class="row">
-              <input id="suEmail" type="email" placeholder="Email" autocomplete="email" />
-              <input id="suPass" type="password" placeholder="Contraseña (mín. 6)" autocomplete="new-password" />
-              <input id="suName" type="text" placeholder="Nombre" />
-              <button id="btnSignUp">Crear cuenta</button>
-              <div class="muted" id="suMsg"></div>
-            </div>
-          </div>
-        </div>
-        <div class="col-6">
-          <div class="p16" style="background:#0b1220;border-radius:12px;border:1px solid #1f2937">
-            <h3 style="margin-top:0">Iniciar sesión</h3>
-            <div class="row">
-              <input id="siEmail" type="email" placeholder="Email" autocomplete="email" />
-              <input id="siPass" type="password" placeholder="Contraseña" autocomplete="current-password" />
-              <button id="btnSignIn">Entrar</button>
-              <button id="btnReset" class="ghost">Olvidé mi clave</button>
-              <div class="muted" id="siMsg"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ✅ App -->
-      <div id="app" class="row" style="display:none">
-        <div class="hdr">
-          <div class="flex">
-            <span id="hello" class="tag"></span>
-            <span id="uid" class="tag"></span>
-          </div>
-          <div class="flex">
-            <button id="btnSignOut" class="ghost">Cerrar sesión</button>
-            <button id="btnDeleteAcc" class="danger">Eliminar cuenta</button>
-          </div>
-        </div>
-
-        <!-- ✍️ Form agenda -->
-        <div class="card p24" style="background:#0b1220;border-radius:12px;border:1px solid #1f2937">
-          <h3 style="margin-top:0">Agregar a mi agenda</h3>
-          <div class="grid">
-            <div class="col-6"><input id="agTitle" placeholder="Título (p. ej. Pádel con Juan)" /></div>
-            <div class="col-3"><input id="agDate" type="date" /></div>
-            <div class="col-3"><input id="agTime" type="time" /></div>
-            <div class="col-12"><textarea id="agNotes" rows="3" placeholder="Notas"></textarea></div>
-            <div class="col-12"><button id="btnAdd">Guardar</button></div>
-            <div class="col-12 muted" id="agMsg"></div>
-          </div>
-        </div>
-
-        <!-- 📋 Lista agenda -->
-        <div class="p16" style="background:#0b1220;border-radius:12px;border:1px solid #1f2937">
-          <div class="hdr"><h3 style="margin:0">Mis eventos</h3>
-            <div class="flex">
-              <button id="btnToday" class="ghost">Solo hoy</button>
-              <button id="btnAll" class="ghost">Todos</button>
-            </div>
-          </div>
-          <div id="list" class="list"></div>
-        </div>
-      </div>
+<!-- MODAL NUEVA TAREA -->
+<div class="modal" id="modalNew">
+  <div class="box">
+    <h2>Crear nueva tarea</h2>
+    <input id="taskName" placeholder="Nombre de la tarea" style="width:100%;margin-bottom:10px;">
+    <select id="taskType" style="width:100%;margin-bottom:10px;">
+      <option value="reminder">Recordatorio</option>
+      <option value="count">Objetivo / Entradas</option>
+      <option value="money">Objetivo / Dinero</option>
+      <option value="victory">Registro Victorias/Derrotas</option>
+    </select>
+    <select id="taskPeriod" style="width:100%;margin-bottom:10px;">
+      <option value="daily">Diario</option>
+      <option value="weekly" selected>Semanal</option>
+      <option value="monthly">Mensual</option>
+      <option value="yearly">Anual</option>
+    </select>
+    <input id="taskLimit" type="number" placeholder="Límite (opcional)" style="width:100%;margin-bottom:14px;">
+    <div style="text-align:right;">
+      <button class="btn gray" id="cancelNew">Cancelar</button>
+      <button class="btn" id="createNew">Crear</button>
     </div>
   </div>
+</div>
 
-  <script type="module">
-    // ================================
-    //  Firebase v10+ (ES Modules CDN)
-    // ================================
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js'
-    import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signOut, deleteUser, updateProfile, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js'
-    import { getFirestore, doc, setDoc, getDoc, collection, addDoc, serverTimestamp, query, where, orderBy, onSnapshot, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js'
+<!-- MODAL HISTORIAL -->
+<div class="modal" id="modalHist">
+  <div class="box">
+    <h2 id="histTitle"></h2>
+    <div id="entries"></div>
+    <div style="display:flex;justify-content:space-between;margin-top:12px;">
+      <button class="btn danger" id="deleteTask">Eliminar tarea</button>
+      <button class="btn gray" id="closeHist">Cerrar</button>
+    </div>
+  </div>
+</div>
 
-    // TODO: pega aquí tu configuración de Firebase
-    const firebaseConfig = {
-      apiKey: "TU_API_KEY",
-      authDomain: "TU_AUTH_DOMAIN",
-      projectId: "TU_PROJECT_ID",
-      storageBucket: "TU_STORAGE_BUCKET",
-      messagingSenderId: "TU_SENDER_ID",
-      appId: "TU_APP_ID"
+<!-- MODAL INSIGHTS -->
+<div class="modal" id="modalInsights">
+  <div class="box">
+    <h2 id="insightsTitle"></h2>
+    <canvas id="chart" height="180"></canvas>
+    <div style="text-align:right;margin-top:10px;">
+      <button class="btn gray" id="closeInsights">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import { getFirestore, collection, addDoc, getDocs, setDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDlJGGfe87b6SVzJ_LcRCtQ7lnSTkvQajI",
+  authDomain: "agenda-e4d10.firebaseapp.com",
+  projectId: "agenda-e4d10",
+  storageBucket: "agenda-e4d10.firebasestorage.app",
+  messagingSenderId: "537185978413",
+  appId: "1:537185978413:web:f3d2561fc7a559e33010a4",
+  measurementId: "G-R3R4S8JK23"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+let uid = null;
+let tasks = [];
+let selected = null;
+const $ = (q)=>document.querySelector(q);
+const status = $("#status");
+
+// Estado inicial
+status.textContent = "🕓 Conectando al usuario...";
+status.className = "status connecting";
+
+// 🔹 Autenticación estable
+onAuthStateChanged(auth, async (user)=>{
+  try {
+    if (user) {
+      uid = user.uid;
+      status.textContent = "✅ Conectado al usuario";
+      status.className = "status connected";
+      await loadTasks();
+    } else {
+      status.textContent = "🕓 Iniciando sesión anónima...";
+      status.className = "status connecting";
+      await signInAnonymously(auth);
+    }
+  } catch (e) {
+    console.error(e);
+    status.textContent = "❌ Error al conectar";
+    status.className = "status error";
+  }
+});
+
+async function loadTasks(){
+  const snap = await getDocs(collection(db,"usuarios",uid,"tareas"));
+  tasks = [];
+  snap.forEach(d=>tasks.push({id:d.id,...d.data()}));
+  render();
+}
+
+async function saveTask(t){
+  if(!t.id){
+    const ref = await addDoc(collection(db,"usuarios",uid,"tareas"),t);
+    t.id=ref.id;
+  } else {
+    await setDoc(doc(db,"usuarios",uid,"tareas",t.id),t);
+  }
+}
+
+async function deleteTaskFn(id){
+  if(!confirm("¿Eliminar esta tarea?"))return;
+  await deleteDoc(doc(db,"usuarios",uid,"tareas",id));
+  tasks = tasks.filter(x=>x.id!==id);
+  $("#modalHist").style.display="none";
+  render();
+}
+
+// ----------- Render ----------
+function render(){
+  const list=$("#taskList"); list.innerHTML="";
+  tasks.forEach((t)=>{
+    const card=document.createElement("div");
+    card.className="card";
+
+    // 🔹 progreso visual
+    let progressHTML = "";
+    if(t.limit && t.limit > 0 && t.entries?.length){
+      let current = 0;
+      if(t.type==="count") current = t.entries.length;
+      else if(t.type==="money") current = t.entries.reduce((a,e)=>a+(e.amount||0),0);
+      const pct = Math.min(100, Math.round((current / t.limit) * 100));
+      progressHTML = `
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+        <small style="color:var(--muted);">${current} / ${t.limit} ${t.type==="money"?"$":""} (${pct}%)</small>`;
     }
 
-    // Init
-    const app = initializeApp(firebaseConfig)
-    const auth = getAuth(app)
-    const db = getFirestore(app)
-    await setPersistence(auth, browserLocalPersistence)
+    card.innerHTML=`
+      <h3>${t.name}</h3>
+      <small>${t.type}</small>
+      ${progressHTML}
+      <div class="entry-inline ${t.type}">
+        <input id="cmt-${t.id}" placeholder="Comentario...">
+        ${t.type==="money"?'<input id="amt-'+t.id+'" type="number" placeholder="$ monto">':''}
+        ${t.type==="victory"?'<select id="res-'+t.id+'"><option value="victoria">Victoria</option><option value="derrota">Derrota</option></select>':''}
+        <button class="btn" onclick="addEntry('${t.id}')">➕</button>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:8px;">
+        <button class="btn gray" onclick="openHist('${t.id}')">📜 Historial</button>
+        <button class="btn" onclick="openInsights('${t.id}')">📊 Insights</button>
+      </div>`;
+    list.append(card);
+  });
+}
 
-    // UI refs
-    const authCard = document.getElementById('authCard')
-    const appView = document.getElementById('app')
-    const hello = document.getElementById('hello')
-    const uidTag = document.getElementById('uid')
+window.addEntry = async function(id){
+  const t = tasks.find(x=>x.id===id);
+  const cmt = $(`#cmt-${id}`).value.trim();
+  const entry = { text:cmt, date:new Date().toISOString() };
+  if(t.type==="money") entry.amount = Number($(`#amt-${id}`).value||0);
+  if(t.type==="victory") entry.result = $(`#res-${id}`).value;
+  t.entries = t.entries || [];
+  t.entries.push(entry);
+  await saveTask(t);
+  render();
+}
 
-    const suEmail = document.getElementById('suEmail')
-    const suPass  = document.getElementById('suPass')
-    const suName  = document.getElementById('suName')
-    const suMsg   = document.getElementById('suMsg')
-    const siEmail = document.getElementById('siEmail')
-    const siPass  = document.getElementById('siPass')
-    const siMsg   = document.getElementById('siMsg')
+window.openHist = function(id){
+  const t = tasks.find(x=>x.id===id);
+  selected=id;
+  $("#histTitle").textContent=t.name;
+  const cont=$("#entries"); cont.innerHTML="";
+  if(!t.entries?.length){cont.innerHTML="<p>Sin entradas</p>";}
+  else t.entries.slice().reverse().forEach(e=>{
+    const div=document.createElement("div");
+    div.className="entry "+(e.result==="victoria"?"victory":e.result==="derrota"?"defeat":"");
+    div.innerHTML=`<b>${new Date(e.date).toLocaleString()}</b><br>${e.text||""}${t.type==="money"?"<br><b>$"+(e.amount||0)+"</b>":""}${t.type==="victory"?"<br><i>"+(e.result||"")+"</i>":""}`;
+    cont.append(div);
+  });
+  $("#modalHist").style.display="flex";
+}
+window.closeHist=()=>$("#modalHist").style.display="none";
+$("#closeHist").onclick=()=>$("#modalHist").style.display="none";
+$("#deleteTask").onclick=()=>deleteTaskFn(selected);
 
-    const btnSignUp = document.getElementById('btnSignUp')
-    const btnSignIn = document.getElementById('btnSignIn')
-    const btnReset  = document.getElementById('btnReset')
-    const btnSignOut= document.getElementById('btnSignOut')
-    const btnDeleteAcc = document.getElementById('btnDeleteAcc')
+window.openInsights = function(id){
+  const t = tasks.find(x=>x.id===id);
+  $("#insightsTitle").textContent=t.name;
+  const ctx=$("#chart").getContext("2d");
+  let data={},labels=[],colors=[];
+  if(t.type==="victory"){
+    const wins=t.entries?.filter(e=>e.result==="victoria").length||0;
+    const losses=t.entries?.filter(e=>e.result==="derrota").length||0;
+    data=[wins,losses];labels=["Victorias","Derrotas"];colors=["#10b981","#ef4444"];
+  } else if(t.type==="money"){
+    const sum=t.entries?.reduce((a,e)=>a+(e.amount||0),0)||0;
+    data=[sum];labels=["Gasto total"];colors=["#6366f1"];
+  } else data=[t.entries?.length||0],labels=["Entradas"],colors=["#6366f1"];
+  if(window.chart1) window.chart1.destroy();
+  window.chart1=new Chart(ctx,{type:"pie",data:{labels,datasets:[{data,backgroundColor:colors}]}});
+  $("#modalInsights").style.display="flex";
+}
+$("#closeInsights").onclick=()=>$("#modalInsights").style.display="none";
 
-    const agTitle = document.getElementById('agTitle')
-    const agDate  = document.getElementById('agDate')
-    const agTime  = document.getElementById('agTime')
-    const agNotes = document.getElementById('agNotes')
-    const btnAdd  = document.getElementById('btnAdd')
-    const agMsg   = document.getElementById('agMsg')
-    const listEl  = document.getElementById('list')
-    const btnToday = document.getElementById('btnToday')
-    const btnAll   = document.getElementById('btnAll')
-
-    let unsubList = null
-    let filterToday = false
-
-    // Helpers
-    const toast = (el, msg, ok=true) => {
-      el.textContent = msg
-      el.style.color = ok ? '#86efac' : '#fca5a5'
-      setTimeout(()=>{ el.textContent = '' }, 3500)
-    }
-    const toISODate = (d) => d.toISOString().slice(0,10)
-
-    // ================================
-    //  Auth flows
-    // ================================
-    btnSignUp.addEventListener('click', async () => {
-      suMsg.textContent = ''
-      try {
-        if (!suEmail.value || !suPass.value) throw new Error('Completa email y contraseña')
-        const { user } = await createUserWithEmailAndPassword(auth, suEmail.value, suPass.value)
-        if (suName.value) await updateProfile(user, { displayName: suName.value })
-        // crear perfil minimo
-        await setDoc(doc(db, 'users', user.uid), {
-          email: user.email,
-          name: suName.value || '',
-          createdAt: serverTimestamp()
-        }, { merge: true })
-        toast(suMsg, 'Cuenta creada ✔️')
-      } catch (e) {
-        toast(suMsg, e.message, false)
-      }
-    })
-
-    btnSignIn.addEventListener('click', async () => {
-      siMsg.textContent = ''
-      try {
-        const { user } = await signInWithEmailAndPassword(auth, siEmail.value, siPass.value)
-        toast(siMsg, `Bienvenido ${user.email} ✔️`)
-      } catch (e) {
-        toast(siMsg, e.message, false)
-      }
-    })
-
-    btnReset.addEventListener('click', async () => {
-      siMsg.textContent = ''
-      try {
-        if (!siEmail.value) throw new Error('Escribe tu email para enviar el reset')
-        await sendPasswordResetEmail(auth, siEmail.value)
-        toast(siMsg, 'Email de recuperación enviado 📧')
-      } catch (e) {
-        toast(siMsg, e.message, false)
-      }
-    })
-
-    btnSignOut.addEventListener('click', async () => {
-      await signOut(auth)
-    })
-
-    btnDeleteAcc.addEventListener('click', async () => {
-      if (!confirm('¿Eliminar tu cuenta y agenda? Esta acción no se puede deshacer.')) return
-      const user = auth.currentUser
-      if (!user) return
-      try {
-        // borra doc de usuario (agenda queda bloqueada por reglas)
-        await deleteUser(user)
-      } catch (e) {
-        alert('Reautentica para eliminar tu cuenta (vuelve a iniciar sesión y prueba de nuevo).')
-      }
-    })
-
-    // ================================
-    //  Firestore: agenda CRUD
-    // ================================
-    const renderList = (uid) => {
-      // Detener listener previo
-      if (unsubList) { unsubList(); unsubList = null }
-
-      const col = collection(db, 'users', uid, 'agenda')
-      let q
-      const todayISO = toISODate(new Date())
-      if (filterToday) {
-        q = query(col, where('date', '==', todayISO), orderBy('time', 'asc'))
-      } else {
-        q = query(col, orderBy('date', 'asc'), orderBy('time', 'asc'))
-      }
-
-      unsubList = onSnapshot(q, snap => {
-        listEl.innerHTML = ''
-        if (snap.empty) {
-          listEl.innerHTML = `<div class="muted">No hay eventos${filterToday ? ' para hoy' : ''}.</div>`
-          return
-        }
-        snap.forEach(docu => {
-          const d = docu.data()
-          const item = document.createElement('div')
-          item.className = 'item'
-          item.innerHTML = `
-            <div class="hdr">
-              <strong>${d.title || '(Sin título)'}</strong>
-              <div class="flex">
-                <span class="tag">${d.date || ''}</span>
-                <span class="tag">${d.time || ''}</span>
-                <button data-id="${docu.id}" class="ghost js-del">Eliminar</button>
-              </div>
-            </div>
-            <div class="muted" style="margin-top:6px">${(d.notes || '').replace(/</g,'&lt;')}</div>
-          `
-          listEl.appendChild(item)
-        })
-      })
-    }
-
-    btnAdd.addEventListener('click', async () => {
-      agMsg.textContent = ''
-      try {
-        const user = auth.currentUser
-        if (!user) throw new Error('Debes iniciar sesión')
-        if (!agTitle.value || !agDate.value) throw new Error('Título y fecha son obligatorios')
-        await addDoc(collection(db, 'users', user.uid, 'agenda'), {
-          title: agTitle.value.trim(),
-          date: agDate.value,
-          time: agTime.value || '',
-          notes: agNotes.value.trim(),
-          createdAt: serverTimestamp()
-        })
-        agTitle.value = ''
-        agDate.value = ''
-        agTime.value = ''
-        agNotes.value = ''
-        toast(agMsg, 'Evento guardado ✔️')
-      } catch (e) {
-        toast(agMsg, e.message, false)
-      }
-    })
-
-    listEl.addEventListener('click', async (e) => {
-      const btn = e.target.closest('.js-del')
-      if (!btn) return
-      const user = auth.currentUser
-      if (!user) return
-      if (!confirm('¿Eliminar este evento?')) return
-      await deleteDoc(doc(db, 'users', user.uid, 'agenda', btn.dataset.id))
-    })
-
-    btnToday.addEventListener('click', () => { filterToday = true; const u = auth.currentUser; if(u) renderList(u.uid) })
-    btnAll.addEventListener('click',   () => { filterToday = false; const u = auth.currentUser; if(u) renderList(u.uid) })
-
-    // ================================
-    //  Session / UI binding
-    // ================================
-    onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        authCard.style.display = 'none'
-        appView.style.display = 'block'
-        hello.textContent = `Hola, ${user.displayName || user.email}`
-        uidTag.textContent = user.uid
-        // asegura doc de perfil
-        const uref = doc(db, 'users', user.uid)
-        const snap = await getDoc(uref)
-        if (!snap.exists()) await setDoc(uref, { email: user.email, createdAt: serverTimestamp() }, { merge: true })
-        renderList(user.uid)
-      } else {
-        if (unsubList) { unsubList(); unsubList = null }
-        authCard.style.display = 'grid'
-        appView.style.display = 'none'
-        hello.textContent = ''
-        uidTag.textContent = ''
-      }
-    })
-  </script>
+$("#btnNew").onclick=()=>$("#modalNew").style.display="flex";
+$("#cancelNew").onclick=()=>$("#modalNew").style.display="none";
+$("#createNew").onclick=async()=>{
+  const name=$("#taskName").value.trim();
+  const type=$("#taskType").value;
+  const period=$("#taskPeriod").value;
+  const limit=$("#taskLimit").value;
+  if(!name)return alert("Escribe un nombre");
+  const task={name,type,period,limit:limit?Number(limit):null,entries:[]};
+  await saveTask(task);
+  $("#modalNew").style.display="none";
+  $("#taskName").value="";render();
+};
+</script>
 </body>
 </html>
