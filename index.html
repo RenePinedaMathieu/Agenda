@@ -2,144 +2,360 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Editor de Drivers - Propuestas</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Agenda con Firebase (Auth + Firestore)</title>
   <style>
-    body { font-family: system-ui, sans-serif; background:#f7f8fa; padding:20px; color:#222; }
-    .card { background:#fff; border-radius:12px; padding:16px; box-shadow:0 8px 24px rgba(0,0,0,.08); max-width:900px; margin:auto; }
-    h1 { font-size:1.3rem; margin-bottom:12px; }
-    select, button, input {
-      padding:8px 12px; border-radius:8px; border:1px solid #ccc; font-size:14px;
-    }
-    button { background:#4f46e5; color:white; border:none; cursor:pointer; }
-    button:disabled { background:#999; cursor:not-allowed; }
-    table { border-collapse:collapse; width:100%; margin-top:16px; }
-    th, td { border:1px solid #ddd; padding:6px 8px; text-align:center; }
-    th { background:#f0f0f5; }
-    td[contenteditable="true"] { background:#fffdf0; }
-    td:focus { outline:2px solid #4f46e5; background:#eef; }
+    :root{--bg:#0f172a;--card:#111827;--ink:#e5e7eb;--muted:#94a3b8;--brand:#22c55e;--danger:#ef4444}
+    *{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial,'Noto Sans','Apple Color Emoji','Segoe UI Emoji';background:linear-gradient(180deg,#0b1220,#0f172a);} 
+    .wrap{max-width:980px;margin:24px auto;padding:16px}
+    .card{background:var(--card);color:var(--ink);border:1px solid #1f2937;border-radius:16px;box-shadow:0 15px 40px rgba(0,0,0,.35)}
+    .row{display:grid;gap:16px}
+    .p16{padding:16px} .p24{padding:24px} .p32{padding:32px}
+    .title{font-size:22px;font-weight:700;margin:0}
+    .muted{color:var(--muted);font-size:14px}
+    .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+    .col-6{grid-column:span 6} .col-12{grid-column:span 12}
+    @media(max-width:800px){.col-6{grid-column:span 12}}
+    input,button,textarea{width:100%;padding:12px 14px;border-radius:12px;border:1px solid #334155;background:#0b1220;color:var(--ink)}
+    input::placeholder,textarea::placeholder{color:#64748b}
+    button{cursor:pointer;background:var(--brand);border:none;color:#062b16;font-weight:700}
+    button.ghost{background:transparent;border:1px solid #334155;color:var(--ink)}
+    button.danger{background:var(--danger);color:#fff}
+    .flex{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+    .space{height:12px}
+    .list{display:grid;gap:10px}
+    .item{background:#0b1220;border:1px solid #1f2937;border-radius:12px;padding:12px}
+    .bad{color:#fca5a5} .ok{color:#86efac} .info{color:#93c5fd}
+    .tag{font-size:12px;padding:2px 8px;border-radius:999px;border:1px solid #334155;color:#cbd5e1}
+    .hdr{display:flex;justify-content:space-between;align-items:center}
+    code{background:#0b1220;border:1px solid #334155;padding:2px 6px;border-radius:8px}
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>Propuesta de Cambios - Drivers Falabella</h1>
+  <div class="wrap">
+    <div class="card p24 row">
+      <div class="hdr">
+        <h1 class="title">Agenda • Firebase</h1>
+        <div class="muted">Auth (email/clave) + Firestore en tiempo real</div>
+      </div>
 
-    <div style="margin-bottom:12px;">
-      <label>Token de acceso:</label>
-      <input id="tokenInput" placeholder="Ej: token-test-123" style="width:220px;"/>
-      <button onclick="guardarToken()">Ingresar</button>
-    </div>
+      <!-- ⚙️ Paso 1: Pegar tu config de Firebase -->
+      <details>
+        <summary class="muted">Cómo configurar (click para ver)</summary>
+        <div class="p16">
+          <ol>
+            <li>Crea un proyecto en <b>Firebase</b> → Habilita <b>Authentication</b> (Email/Password).</li>
+            <li>Habilita <b>Cloud Firestore</b> en modo producción.</li>
+            <li>En <b>Project settings → Your apps → Web app</b> copia el objeto <code>firebaseConfig</code> y pégalo abajo donde dice <i>// TODO</i>.</li>
+            <li>(Opcional) Reglas de Firestore iniciales seguras:
+              <pre style="white-space:pre-wrap; color:#cbd5e1; background:#0b1220; border:1px solid #334155; padding:10px; border-radius:8px">rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+      match /agenda/{docId} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+    }
+  }
+}</pre>
+            </li>
+          </ol>
+        </div>
+      </details>
 
-    <div style="margin-bottom:12px;">
-      <label>Orden:</label>
-      <select id="ordenSelect"><option value="">--Seleccione--</option></select>
-      <label style="margin-left:12px;">Driver:</label>
-      <select id="driverSelect"><option value="">--Seleccione--</option></select>
-      <button id="cargarBtn" onclick="cargarDriver()">Cargar</button>
-    </div>
+      <div class="space"></div>
 
-    <div id="tablaContainer"></div>
-    <div style="margin-top:12px;">
-      <button id="enviarBtn" disabled>Enviar propuesta</button>
+      <!-- 🔐 Auth -->
+      <div id="authCard" class="grid">
+        <div class="col-6">
+          <div class="p16" style="background:#0b1220;border-radius:12px;border:1px solid #1f2937">
+            <h3 style="margin-top:0">Crear cuenta</h3>
+            <div class="row">
+              <input id="suEmail" type="email" placeholder="Email" autocomplete="email" />
+              <input id="suPass" type="password" placeholder="Contraseña (mín. 6)" autocomplete="new-password" />
+              <input id="suName" type="text" placeholder="Nombre" />
+              <button id="btnSignUp">Crear cuenta</button>
+              <div class="muted" id="suMsg"></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="p16" style="background:#0b1220;border-radius:12px;border:1px solid #1f2937">
+            <h3 style="margin-top:0">Iniciar sesión</h3>
+            <div class="row">
+              <input id="siEmail" type="email" placeholder="Email" autocomplete="email" />
+              <input id="siPass" type="password" placeholder="Contraseña" autocomplete="current-password" />
+              <button id="btnSignIn">Entrar</button>
+              <button id="btnReset" class="ghost">Olvidé mi clave</button>
+              <div class="muted" id="siMsg"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ✅ App -->
+      <div id="app" class="row" style="display:none">
+        <div class="hdr">
+          <div class="flex">
+            <span id="hello" class="tag"></span>
+            <span id="uid" class="tag"></span>
+          </div>
+          <div class="flex">
+            <button id="btnSignOut" class="ghost">Cerrar sesión</button>
+            <button id="btnDeleteAcc" class="danger">Eliminar cuenta</button>
+          </div>
+        </div>
+
+        <!-- ✍️ Form agenda -->
+        <div class="card p24" style="background:#0b1220;border-radius:12px;border:1px solid #1f2937">
+          <h3 style="margin-top:0">Agregar a mi agenda</h3>
+          <div class="grid">
+            <div class="col-6"><input id="agTitle" placeholder="Título (p. ej. Pádel con Juan)" /></div>
+            <div class="col-3"><input id="agDate" type="date" /></div>
+            <div class="col-3"><input id="agTime" type="time" /></div>
+            <div class="col-12"><textarea id="agNotes" rows="3" placeholder="Notas"></textarea></div>
+            <div class="col-12"><button id="btnAdd">Guardar</button></div>
+            <div class="col-12 muted" id="agMsg"></div>
+          </div>
+        </div>
+
+        <!-- 📋 Lista agenda -->
+        <div class="p16" style="background:#0b1220;border-radius:12px;border:1px solid #1f2937">
+          <div class="hdr"><h3 style="margin:0">Mis eventos</h3>
+            <div class="flex">
+              <button id="btnToday" class="ghost">Solo hoy</button>
+              <button id="btnAll" class="ghost">Todos</button>
+            </div>
+          </div>
+          <div id="list" class="list"></div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <script>
-    const API_URL = "http://localhost:8000"; // cambia esto a tu URL de Cloud Run luego
-    let API_KEY = "";
-    let dataEmpresas = [];
-    let ordenSel = "", driverSel = "";
+  <script type="module">
+    // ================================
+    //  Firebase v10+ (ES Modules CDN)
+    // ================================
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js'
+    import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signOut, deleteUser, updateProfile, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js'
+    import { getFirestore, doc, setDoc, getDoc, collection, addDoc, serverTimestamp, query, where, orderBy, onSnapshot, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js'
 
-    function guardarToken() {
-      API_KEY = document.getElementById("tokenInput").value.trim();
-      if (!API_KEY) return alert("Ingrese un token válido.");
-      alert("Token guardado. Cargando base...");
-      cargarCatalogo();
+    // TODO: pega aquí tu configuración de Firebase
+    const firebaseConfig = {
+      apiKey: "TU_API_KEY",
+      authDomain: "TU_AUTH_DOMAIN",
+      projectId: "TU_PROJECT_ID",
+      storageBucket: "TU_STORAGE_BUCKET",
+      messagingSenderId: "TU_SENDER_ID",
+      appId: "TU_APP_ID"
     }
 
-    async function cargarCatalogo() {
-      const res = await fetch(`${API_URL}/drivers-disponibles`, {
-        headers: { "Authorization": "Bearer " + API_KEY }
-      });
-      if (!res.ok) return alert("Error cargando catálogo");
-      const data = await res.json();
-      const ordenes = [...new Set(data.map(d => d.orden_estadistica))];
-      const ordenSelect = document.getElementById("ordenSelect");
-      ordenSelect.innerHTML = "<option value=''>--Seleccione--</option>" +
-        ordenes.map(o => `<option>${o}</option>`).join("");
+    // Init
+    const app = initializeApp(firebaseConfig)
+    const auth = getAuth(app)
+    const db = getFirestore(app)
+    await setPersistence(auth, browserLocalPersistence)
 
-      const driverSelect = document.getElementById("driverSelect");
-      ordenSelect.addEventListener("change", () => {
-        const seleccionada = ordenSelect.value;
-        const drivers = data.filter(d => d.orden_estadistica === seleccionada).map(d => d.nombre_driver);
-        driverSelect.innerHTML = "<option value=''>--Seleccione--</option>" +
-          drivers.map(d => `<option>${d}</option>`).join("");
-      });
+    // UI refs
+    const authCard = document.getElementById('authCard')
+    const appView = document.getElementById('app')
+    const hello = document.getElementById('hello')
+    const uidTag = document.getElementById('uid')
+
+    const suEmail = document.getElementById('suEmail')
+    const suPass  = document.getElementById('suPass')
+    const suName  = document.getElementById('suName')
+    const suMsg   = document.getElementById('suMsg')
+    const siEmail = document.getElementById('siEmail')
+    const siPass  = document.getElementById('siPass')
+    const siMsg   = document.getElementById('siMsg')
+
+    const btnSignUp = document.getElementById('btnSignUp')
+    const btnSignIn = document.getElementById('btnSignIn')
+    const btnReset  = document.getElementById('btnReset')
+    const btnSignOut= document.getElementById('btnSignOut')
+    const btnDeleteAcc = document.getElementById('btnDeleteAcc')
+
+    const agTitle = document.getElementById('agTitle')
+    const agDate  = document.getElementById('agDate')
+    const agTime  = document.getElementById('agTime')
+    const agNotes = document.getElementById('agNotes')
+    const btnAdd  = document.getElementById('btnAdd')
+    const agMsg   = document.getElementById('agMsg')
+    const listEl  = document.getElementById('list')
+    const btnToday = document.getElementById('btnToday')
+    const btnAll   = document.getElementById('btnAll')
+
+    let unsubList = null
+    let filterToday = false
+
+    // Helpers
+    const toast = (el, msg, ok=true) => {
+      el.textContent = msg
+      el.style.color = ok ? '#86efac' : '#fca5a5'
+      setTimeout(()=>{ el.textContent = '' }, 3500)
+    }
+    const toISODate = (d) => d.toISOString().slice(0,10)
+
+    // ================================
+    //  Auth flows
+    // ================================
+    btnSignUp.addEventListener('click', async () => {
+      suMsg.textContent = ''
+      try {
+        if (!suEmail.value || !suPass.value) throw new Error('Completa email y contraseña')
+        const { user } = await createUserWithEmailAndPassword(auth, suEmail.value, suPass.value)
+        if (suName.value) await updateProfile(user, { displayName: suName.value })
+        // crear perfil minimo
+        await setDoc(doc(db, 'users', user.uid), {
+          email: user.email,
+          name: suName.value || '',
+          createdAt: serverTimestamp()
+        }, { merge: true })
+        toast(suMsg, 'Cuenta creada ✔️')
+      } catch (e) {
+        toast(suMsg, e.message, false)
+      }
+    })
+
+    btnSignIn.addEventListener('click', async () => {
+      siMsg.textContent = ''
+      try {
+        const { user } = await signInWithEmailAndPassword(auth, siEmail.value, siPass.value)
+        toast(siMsg, `Bienvenido ${user.email} ✔️`)
+      } catch (e) {
+        toast(siMsg, e.message, false)
+      }
+    })
+
+    btnReset.addEventListener('click', async () => {
+      siMsg.textContent = ''
+      try {
+        if (!siEmail.value) throw new Error('Escribe tu email para enviar el reset')
+        await sendPasswordResetEmail(auth, siEmail.value)
+        toast(siMsg, 'Email de recuperación enviado 📧')
+      } catch (e) {
+        toast(siMsg, e.message, false)
+      }
+    })
+
+    btnSignOut.addEventListener('click', async () => {
+      await signOut(auth)
+    })
+
+    btnDeleteAcc.addEventListener('click', async () => {
+      if (!confirm('¿Eliminar tu cuenta y agenda? Esta acción no se puede deshacer.')) return
+      const user = auth.currentUser
+      if (!user) return
+      try {
+        // borra doc de usuario (agenda queda bloqueada por reglas)
+        await deleteUser(user)
+      } catch (e) {
+        alert('Reautentica para eliminar tu cuenta (vuelve a iniciar sesión y prueba de nuevo).')
+      }
+    })
+
+    // ================================
+    //  Firestore: agenda CRUD
+    // ================================
+    const renderList = (uid) => {
+      // Detener listener previo
+      if (unsubList) { unsubList(); unsubList = null }
+
+      const col = collection(db, 'users', uid, 'agenda')
+      let q
+      const todayISO = toISODate(new Date())
+      if (filterToday) {
+        q = query(col, where('date', '==', todayISO), orderBy('time', 'asc'))
+      } else {
+        q = query(col, orderBy('date', 'asc'), orderBy('time', 'asc'))
+      }
+
+      unsubList = onSnapshot(q, snap => {
+        listEl.innerHTML = ''
+        if (snap.empty) {
+          listEl.innerHTML = `<div class="muted">No hay eventos${filterToday ? ' para hoy' : ''}.</div>`
+          return
+        }
+        snap.forEach(docu => {
+          const d = docu.data()
+          const item = document.createElement('div')
+          item.className = 'item'
+          item.innerHTML = `
+            <div class="hdr">
+              <strong>${d.title || '(Sin título)'}</strong>
+              <div class="flex">
+                <span class="tag">${d.date || ''}</span>
+                <span class="tag">${d.time || ''}</span>
+                <button data-id="${docu.id}" class="ghost js-del">Eliminar</button>
+              </div>
+            </div>
+            <div class="muted" style="margin-top:6px">${(d.notes || '').replace(/</g,'&lt;')}</div>
+          `
+          listEl.appendChild(item)
+        })
+      })
     }
 
-    async function cargarDriver() {
-      ordenSel = document.getElementById("ordenSelect").value;
-      driverSel = document.getElementById("driverSelect").value;
-      if (!ordenSel || !driverSel) return alert("Seleccione orden y driver.");
+    btnAdd.addEventListener('click', async () => {
+      agMsg.textContent = ''
+      try {
+        const user = auth.currentUser
+        if (!user) throw new Error('Debes iniciar sesión')
+        if (!agTitle.value || !agDate.value) throw new Error('Título y fecha son obligatorios')
+        await addDoc(collection(db, 'users', user.uid, 'agenda'), {
+          title: agTitle.value.trim(),
+          date: agDate.value,
+          time: agTime.value || '',
+          notes: agNotes.value.trim(),
+          createdAt: serverTimestamp()
+        })
+        agTitle.value = ''
+        agDate.value = ''
+        agTime.value = ''
+        agNotes.value = ''
+        toast(agMsg, 'Evento guardado ✔️')
+      } catch (e) {
+        toast(agMsg, e.message, false)
+      }
+    })
 
-      const res = await fetch(`${API_URL}/mis-drivers?orden=${encodeURIComponent(ordenSel)}&driver=${encodeURIComponent(driverSel)}`, {
-        headers: { "Authorization": "Bearer " + API_KEY }
-      });
-      if (!res.ok) return alert("Error al cargar driver.");
-      const data = await res.json();
+    listEl.addEventListener('click', async (e) => {
+      const btn = e.target.closest('.js-del')
+      if (!btn) return
+      const user = auth.currentUser
+      if (!user) return
+      if (!confirm('¿Eliminar este evento?')) return
+      await deleteDoc(doc(db, 'users', user.uid, 'agenda', btn.dataset.id))
+    })
 
-      dataEmpresas = data.empresas;
-      renderTabla();
-    }
+    btnToday.addEventListener('click', () => { filterToday = true; const u = auth.currentUser; if(u) renderList(u.uid) })
+    btnAll.addEventListener('click',   () => { filterToday = false; const u = auth.currentUser; if(u) renderList(u.uid) })
 
-    function renderTabla() {
-      let html = "<table><tr><th>Empresa</th><th>Porcentaje Actual</th><th>Nuevo (%)</th></tr>";
-      dataEmpresas.forEach((e, i) => {
-        html += `<tr>
-          <td>${e.empresa}</td>
-          <td>${e.porcentaje}</td>
-          <td contenteditable="true" data-index="${i}">${e.porcentaje}</td>
-        </tr>`;
-      });
-      html += "</table>";
-      document.getElementById("tablaContainer").innerHTML = html;
-      document.getElementById("enviarBtn").disabled = false;
-
-      document.querySelectorAll("td[contenteditable]").forEach(td => {
-        td.addEventListener("input", () => {
-          const idx = parseInt(td.dataset.index);
-          const val = parseFloat(td.innerText) || 0;
-          dataEmpresas[idx].nuevo = val;
-        });
-      });
-
-      document.getElementById("enviarBtn").onclick = enviarPropuesta;
-    }
-
-    async function enviarPropuesta() {
-      const total = dataEmpresas.reduce((s,e) => s + (e.nuevo ?? e.porcentaje), 0);
-      if (total > 100.001) return alert(`El total (${total.toFixed(2)}%) supera 100%`);
-
-      const payload = {
-        orden_estadistica: ordenSel,
-        nombre_driver: driverSel,
-        empresas: dataEmpresas.map(e => ({
-          empresa: e.empresa,
-          porcentaje_nuevo: e.nuevo ?? e.porcentaje
-        }))
-      };
-
-      const res = await fetch(`${API_URL}/proponer-cambio`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer " + API_KEY
-        },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      if (!res.ok) return alert("Error: " + (data.detail || res.statusText));
-      alert("✅ Propuesta enviada correctamente. ID: " + data.propuesta_id);
-    }
+    // ================================
+    //  Session / UI binding
+    // ================================
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        authCard.style.display = 'none'
+        appView.style.display = 'block'
+        hello.textContent = `Hola, ${user.displayName || user.email}`
+        uidTag.textContent = user.uid
+        // asegura doc de perfil
+        const uref = doc(db, 'users', user.uid)
+        const snap = await getDoc(uref)
+        if (!snap.exists()) await setDoc(uref, { email: user.email, createdAt: serverTimestamp() }, { merge: true })
+        renderList(user.uid)
+      } else {
+        if (unsubList) { unsubList(); unsubList = null }
+        authCard.style.display = 'grid'
+        appView.style.display = 'none'
+        hello.textContent = ''
+        uidTag.textContent = ''
+      }
+    })
   </script>
 </body>
 </html>
