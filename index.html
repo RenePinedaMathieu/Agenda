@@ -3,349 +3,348 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Agenda Interactiva</title>
-
-<!-- Chart.js para los Insights -->
+<title>Agenda Pelotas (Firebase)</title>
+<link rel="preconnect" href="https://www.gstatic.com"/>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-
 <style>
-:root {
-  --primary: #6366f1;
-  --secondary: #a5b4fc;
-  --bg: #f5f7ff;
-  --text: #1f2937;
-  --muted: #6b7280;
-  --ok: #10b981;
-  --danger: #ef4444;
+:root{
+  --primary:#6366f1;--secondary:#a5b4fc;--ok:#10b981;--warn:#f59e0b;--danger:#ef4444;
+  --ink:#111827;--bg:#f6f7ff;--muted:#6b7280;--card:#ffffff
 }
-body {
-  margin: 0;
-  font-family: "Inter", system-ui, sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-h1 {
-  font-size: 1.8rem;
-  font-weight: 800;
-  background: linear-gradient(90deg, var(--primary), var(--secondary));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  margin-bottom: 10px;
-}
-.status {
-  font-size: 0.95rem;
-  margin-bottom: 16px;
-  padding: 6px 12px;
-  border-radius: 8px;
-  font-weight: 600;
-}
-.status.connecting { background: #fef9c3; color: #92400e; }
-.status.connected { background: #dcfce7; color: #166534; }
-.status.error { background: #fee2e2; color: #991b1b; }
-.btn {
-  background: var(--primary);
-  color: white;
-  border: none;
-  border-radius: 12px;
-  padding: 10px 14px;
-  cursor: pointer;
-  font-weight: 700;
-  transition: transform .15s ease;
-}
-.btn:hover { transform: translateY(-1px); }
-.btn.gray { background: #9ca3af; }
-.btn.danger { background: var(--danger); }
-.container { width: 100%; max-width: 900px; display: grid; gap: 16px; }
-.card {
-  background: white;
-  padding: 16px;
-  border-radius: 16px;
-  box-shadow: 0 6px 18px rgba(99,102,241,.08);
-}
-.entry-inline {
-  display: grid;
-  gap: 8px;
-  grid-template-columns: 1fr 120px auto;
-  margin-top: 10px;
-}
-.entry-inline.money { grid-template-columns: 1fr 120px 120px auto; }
-.entry-inline.victory { grid-template-columns: 1fr 120px auto; }
-input, select {
-  padding: 10px;
-  border: 1px solid #cbd5e1;
-  border-radius: 10px;
-  font-size: .95rem;
-}
-.modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,.5);
-  display: none;
-  align-items: center;
-  justify-content: center;
-}
-.modal .box {
-  background: white;
-  padding: 20px;
-  border-radius: 14px;
-  width: 90%;
-  max-width: 600px;
-  box-shadow: 0 10px 24px rgba(0,0,0,.15);
-}
-.entry {
-  background: #eef2ff;
-  padding: 10px;
-  border-radius: 10px;
-  margin: 8px 0;
-}
-.entry.victory { background: #ecfdf5; border-left: 5px solid var(--ok); }
-.entry.defeat { background: #fef2f2; border-left: 5px solid var(--danger); }
-.progress-bar {
-  height: 10px;
-  background: #eef2ff;
-  border-radius: 8px;
-  overflow: hidden;
-  margin-top: 6px;
-}
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg,var(--primary),var(--secondary));
-  transition: width .3s ease;
-}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial;background:var(--bg);color:var(--ink);padding:24px;display:flex;flex-direction:column;align-items:center}
+header{display:flex;gap:12px;align-items:center;justify-content:space-between;max-width:1000px;width:100%}
+h1{font-size:1.8rem;margin:0;background:linear-gradient(90deg,var(--primary),var(--secondary));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.status{font-size:.95rem;padding:6px 12px;border-radius:8px;font-weight:600}
+.status.connecting{background:#fef9c3;color:#92400e}
+.status.connected{background:#dcfce7;color:#166534}
+.status.error{background:#fee2e2;color:#991b1b}
+.btn{background:var(--primary);color:#fff;border:none;border-radius:12px;padding:10px 14px;cursor:pointer;font-weight:700;transition:transform .15s ease}
+.btn:hover{transform:translateY(-1px)}.btn.gray{background:#9ca3af}.btn.danger{background:var(--danger)}
+#board{margin-top:18px;display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:18px;max-width:1000px;width:100%}
+.ball{position:relative;width:120px;height:120px;border-radius:50%;background:#e5e7eb;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 20px rgba(0,0,0,.08);border:3px solid #e5e7eb;cursor:pointer;transition:transform .15s ease, background .3s ease,border-color .3s ease}
+.ball:hover{transform:translateY(-2px) scale(1.02)}
+.ball .label{position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);font-size:.85rem;color:var(--muted);white-space:nowrap;max-width:120px;text-overflow:ellipsis;overflow:hidden}
+.ball .pct{position:absolute;top:8px;right:10px;font-weight:700;font-size:.9rem;color:#111827;background:#ffffffd9;border-radius:999px;padding:2px 6px}
+.ball.appear{animation:pop .25s ease}
+@keyframes pop{0%{transform:scale(.6);opacity:.3}100%{transform:scale(1);opacity:1}}
+/* colores por progreso */
+.ball.p0{background:#e5e7eb;border-color:#e5e7eb}
+.ball.p1{background:#fee2e2;border-color:#fecaca}
+.ball.p2{background:#fef3c7;border-color:#fde68a}
+.ball.p3{background:#dcfce7;border-color:#bbf7d0}
+/* tarjetas y modales */
+.card{background:var(--card);border-radius:16px;box-shadow:0 6px 18px rgba(99,102,241,.08);padding:16px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;padding:16px}
+.modal .box{background:#fff;border-radius:14px;box-shadow:0 10px 24px rgba(0,0,0,.15);padding:20px;max-width:640px;width:100%}
+input,select,textarea{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:10px;font-size:.95rem}
+.row{display:grid;gap:10px}
+.row.cols-2{grid-template-columns:1fr 1fr}
+.row.cols-3{grid-template-columns:1fr 1fr 1fr}
+@media(max-width:780px){.row.cols-2,.row.cols-3{grid-template-columns:1fr}}
+.small{font-size:.9rem;color:var(--muted)}
+.list{display:grid;gap:10px;max-height:300px;overflow:auto;margin-top:8px}
+.entry{background:#eef2ff;border-left:4px solid var(--primary);padding:8px;border-radius:10px}
 </style>
 </head>
-
 <body>
-<h1>📅 Agenda Interactiva</h1>
-<div id="status" class="status connecting">🕓 Conectando al usuario...</div>
-<div style="margin-bottom: 16px;">
-  <button class="btn" id="btnNew">+ Nueva Tarea</button>
-</div>
-<div class="container" id="taskList"></div>
-
-<!-- MODAL NUEVA TAREA -->
-<div class="modal" id="modalNew">
-  <div class="box">
-    <h2>Crear nueva tarea</h2>
-    <input id="taskName" placeholder="Nombre de la tarea" style="width:100%;margin-bottom:10px;">
-    <select id="taskType" style="width:100%;margin-bottom:10px;">
-      <option value="reminder">Recordatorio</option>
-      <option value="count">Objetivo / Entradas</option>
-      <option value="money">Objetivo / Dinero</option>
-      <option value="victory">Registro Victorias/Derrotas</option>
-    </select>
-    <select id="taskPeriod" style="width:100%;margin-bottom:10px;">
-      <option value="daily">Diario</option>
-      <option value="weekly" selected>Semanal</option>
-      <option value="monthly">Mensual</option>
-      <option value="yearly">Anual</option>
-    </select>
-    <input id="taskLimit" type="number" placeholder="Límite (opcional)" style="width:100%;margin-bottom:14px;">
-    <div style="text-align:right;">
-      <button class="btn gray" id="cancelNew">Cancelar</button>
-      <button class="btn" id="createNew">Crear</button>
+  <header>
+    <h1>📅 Agenda Pelotas</h1>
+    <div class="status connecting" id="status">🕓 Conectando...</div>
+    <div>
+      <button class="btn" id="btnAdd">+ Agregar actividad</button>
     </div>
-  </div>
-</div>
+  </header>
 
-<!-- MODAL HISTORIAL -->
-<div class="modal" id="modalHist">
-  <div class="box">
-    <h2 id="histTitle"></h2>
-    <div id="entries"></div>
-    <div style="display:flex;justify-content:space-between;margin-top:12px;">
-      <button class="btn danger" id="deleteTask">Eliminar tarea</button>
-      <button class="btn gray" id="closeHist">Cerrar</button>
-    </div>
-  </div>
-</div>
+  <section id="board"></section>
 
-<!-- MODAL INSIGHTS -->
-<div class="modal" id="modalInsights">
-  <div class="box">
-    <h2 id="insightsTitle"></h2>
-    <canvas id="chart" height="180"></canvas>
-    <div style="text-align:right;margin-top:10px;">
-      <button class="btn gray" id="closeInsights">Cerrar</button>
-    </div>
-  </div>
-</div>
-
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-import { getFirestore, collection, addDoc, getDocs, setDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyDlJGGfe87b6SVzJ_LcRCtQ7lnSTkvQajI",
-  authDomain: "agenda-e4d10.firebaseapp.com",
-  projectId: "agenda-e4d10",
-  storageBucket: "agenda-e4d10.firebasestorage.app",
-  messagingSenderId: "537185978413",
-  appId: "1:537185978413:web:f3d2561fc7a559e33010a4",
-  measurementId: "G-R3R4S8JK23"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-let uid = null;
-let tasks = [];
-let selected = null;
-const $ = (q)=>document.querySelector(q);
-const status = $("#status");
-
-// Estado inicial
-status.textContent = "🕓 Conectando al usuario...";
-status.className = "status connecting";
-
-// 🔹 Autenticación estable
-onAuthStateChanged(auth, async (user)=>{
-  try {
-    if (user) {
-      uid = user.uid;
-      status.textContent = "✅ Conectado al usuario";
-      status.className = "status connected";
-      await loadTasks();
-    } else {
-      status.textContent = "🕓 Iniciando sesión anónima...";
-      status.className = "status connecting";
-      await signInAnonymously(auth);
-    }
-  } catch (e) {
-    console.error(e);
-    status.textContent = "❌ Error al conectar";
-    status.className = "status error";
-  }
-});
-
-async function loadTasks(){
-  const snap = await getDocs(collection(db,"usuarios",uid,"tareas"));
-  tasks = [];
-  snap.forEach(d=>tasks.push({id:d.id,...d.data()}));
-  render();
-}
-
-async function saveTask(t){
-  if(!t.id){
-    const ref = await addDoc(collection(db,"usuarios",uid,"tareas"),t);
-    t.id=ref.id;
-  } else {
-    await setDoc(doc(db,"usuarios",uid,"tareas",t.id),t);
-  }
-}
-
-async function deleteTaskFn(id){
-  if(!confirm("¿Eliminar esta tarea?"))return;
-  await deleteDoc(doc(db,"usuarios",uid,"tareas",id));
-  tasks = tasks.filter(x=>x.id!==id);
-  $("#modalHist").style.display="none";
-  render();
-}
-
-// ----------- Render ----------
-function render(){
-  const list=$("#taskList"); list.innerHTML="";
-  tasks.forEach((t)=>{
-    const card=document.createElement("div");
-    card.className="card";
-
-    // 🔹 progreso visual
-    let progressHTML = "";
-    if(t.limit && t.limit > 0 && t.entries?.length){
-      let current = 0;
-      if(t.type==="count") current = t.entries.length;
-      else if(t.type==="money") current = t.entries.reduce((a,e)=>a+(e.amount||0),0);
-      const pct = Math.min(100, Math.round((current / t.limit) * 100));
-      progressHTML = `
-        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
-        <small style="color:var(--muted);">${current} / ${t.limit} ${t.type==="money"?"$":""} (${pct}%)</small>`;
-    }
-
-    card.innerHTML=`
-      <h3>${t.name}</h3>
-      <small>${t.type}</small>
-      ${progressHTML}
-      <div class="entry-inline ${t.type}">
-        <input id="cmt-${t.id}" placeholder="Comentario...">
-        ${t.type==="money"?'<input id="amt-'+t.id+'" type="number" placeholder="$ monto">':''}
-        ${t.type==="victory"?'<select id="res-'+t.id+'"><option value="victoria">Victoria</option><option value="derrota">Derrota</option></select>':''}
-        <button class="btn" onclick="addEntry('${t.id}')">➕</button>
+  <!-- Modal: Crear/Editar actividad -->
+  <div class="modal" id="modalNew">
+    <div class="box">
+      <h2 style="margin-top:0">Nueva actividad</h2>
+      <div class="row cols-2">
+        <div><label class="small">Nombre</label><input id="mName" placeholder="p. ej., Pádel, Ahorro, Lectura"></div>
+        <div>
+          <label class="small">Tipo</label>
+          <select id="mType">
+            <option value="one_time">One time</option>
+            <option value="recurrent" selected>Recurrent</option>
+            <option value="limit">Limit</option>
+            <option value="goal">Goal</option>
+          </select>
+        </div>
       </div>
-      <div style="margin-top:10px;display:flex;gap:8px;">
-        <button class="btn gray" onclick="openHist('${t.id}')">📜 Historial</button>
-        <button class="btn" onclick="openInsights('${t.id}')">📊 Insights</button>
-      </div>`;
-    list.append(card);
-  });
-}
+      <div id="typeFields" class="row" style="margin-top:8px"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+        <button class="btn gray" id="mCancel">Cancelar</button>
+        <button class="btn" id="mCreate">Crear</button>
+      </div>
+    </div>
+  </div>
 
-window.addEntry = async function(id){
-  const t = tasks.find(x=>x.id===id);
-  const cmt = $(`#cmt-${id}`).value.trim();
-  const entry = { text:cmt, date:new Date().toISOString() };
-  if(t.type==="money") entry.amount = Number($(`#amt-${id}`).value||0);
-  if(t.type==="victory") entry.result = $(`#res-${id}`).value;
-  t.entries = t.entries || [];
-  t.entries.push(entry);
-  await saveTask(t);
-  render();
-}
+  <!-- Modal: Entrada / registro -->
+  <div class="modal" id="modalEntry">
+    <div class="box">
+      <h2 id="eTitle" style="margin-top:0">Registrar</h2>
+      <div class="row">
+        <textarea id="eComment" rows="3" placeholder="Comentario opcional..."></textarea>
+        <div id="eValueWrap" style="display:none">
+          <label class="small" id="eValueLbl">Valor</label>
+          <input id="eValue" type="number" placeholder="0">
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+        <button class="btn gray" id="eCancel">Cancelar</button>
+        <button class="btn" id="eSave">Guardar</button>
+      </div>
+    </div>
+  </div>
 
-window.openHist = function(id){
-  const t = tasks.find(x=>x.id===id);
-  selected=id;
-  $("#histTitle").textContent=t.name;
-  const cont=$("#entries"); cont.innerHTML="";
-  if(!t.entries?.length){cont.innerHTML="<p>Sin entradas</p>";}
-  else t.entries.slice().reverse().forEach(e=>{
-    const div=document.createElement("div");
-    div.className="entry "+(e.result==="victoria"?"victory":e.result==="derrota"?"defeat":"");
-    div.innerHTML=`<b>${new Date(e.date).toLocaleString()}</b><br>${e.text||""}${t.type==="money"?"<br><b>$"+(e.amount||0)+"</b>":""}${t.type==="victory"?"<br><i>"+(e.result||"")+"</i>":""}`;
-    cont.append(div);
-  });
-  $("#modalHist").style.display="flex";
-}
-window.closeHist=()=>$("#modalHist").style.display="none";
-$("#closeHist").onclick=()=>$("#modalHist").style.display="none";
-$("#deleteTask").onclick=()=>deleteTaskFn(selected);
+  <!-- Modal: Historial + Insights -->
+  <div class="modal" id="modalHist">
+    <div class="box">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h2 id="hTitle" style="margin:0">Historial</h2>
+        <div style="display:flex;gap:8px">
+          <button class="btn danger" id="hDelete">Eliminar actividad</button>
+          <button class="btn gray" id="hClose">Cerrar</button>
+        </div>
+      </div>
+      <div class="row cols-2" style="margin-top:8px">
+        <div class="card">
+          <canvas id="hChart" height="180"></canvas>
+        </div>
+        <div class="card">
+          <div class="small">Entradas recientes</div>
+          <div id="hList" class="list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-window.openInsights = function(id){
-  const t = tasks.find(x=>x.id===id);
-  $("#insightsTitle").textContent=t.name;
-  const ctx=$("#chart").getContext("2d");
-  let data={},labels=[],colors=[];
-  if(t.type==="victory"){
-    const wins=t.entries?.filter(e=>e.result==="victoria").length||0;
-    const losses=t.entries?.filter(e=>e.result==="derrota").length||0;
-    data=[wins,losses];labels=["Victorias","Derrotas"];colors=["#10b981","#ef4444"];
-  } else if(t.type==="money"){
-    const sum=t.entries?.reduce((a,e)=>a+(e.amount||0),0)||0;
-    data=[sum];labels=["Gasto total"];colors=["#6366f1"];
-  } else data=[t.entries?.length||0],labels=["Entradas"],colors=["#6366f1"];
-  if(window.chart1) window.chart1.destroy();
-  window.chart1=new Chart(ctx,{type:"pie",data:{labels,datasets:[{data,backgroundColor:colors}]}});
-  $("#modalInsights").style.display="flex";
-}
-$("#closeInsights").onclick=()=>$("#modalInsights").style.display="none";
+  <script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js'
+  import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js'
+  import { getFirestore, collection, addDoc, getDocs, setDoc, doc, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js'
 
-$("#btnNew").onclick=()=>$("#modalNew").style.display="flex";
-$("#cancelNew").onclick=()=>$("#modalNew").style.display="none";
-$("#createNew").onclick=async()=>{
-  const name=$("#taskName").value.trim();
-  const type=$("#taskType").value;
-  const period=$("#taskPeriod").value;
-  const limit=$("#taskLimit").value;
-  if(!name)return alert("Escribe un nombre");
-  const task={name,type,period,limit:limit?Number(limit):null,entries:[]};
-  await saveTask(task);
-  $("#modalNew").style.display="none";
-  $("#taskName").value="";render();
-};
-</script>
+  // === TU CONFIG (reemplaza por la tuya si hace falta) ===
+  const firebaseConfig = {
+    apiKey: 'AIzaSyDlJGGfe87b6SVzJ_LcRCtQ7lnSTkvQajI',
+    authDomain: 'agenda-e4d10.firebaseapp.com',
+    projectId: 'agenda-e4d10',
+    storageBucket: 'agenda-e4d10.firebasestorage.app',
+    messagingSenderId: '537185978413',
+    appId: '1:537185978413:web:f3d2561fc7a559e33010a4',
+    measurementId: 'G-R3R4S8JK23'
+  }
+
+  const app = initializeApp(firebaseConfig)
+  const auth = getAuth(app)
+  const db = getFirestore(app)
+
+  let uid=null; let tasks=[]; let selected=null; let chart=null
+  const $ = q => document.querySelector(q)
+  const status = $('#status')
+
+  // ======= Helpers =======
+  const todayISO = () => new Date().toISOString().slice(0,10)
+  const startOfWeek = (d) => { const x=new Date(d); const day=(x.getDay()+6)%7; x.setDate(x.getDate()-day); x.setHours(0,0,0,0); return x }
+  const startOfMonth = (d)=>{const x=new Date(d); x.setDate(1); x.setHours(0,0,0,0); return x}
+  const startOfYear  = (d)=>{const x=new Date(d); x.setMonth(0,1); x.setHours(0,0,0,0); return x}
+
+  function periodWindow(period){
+    const now=new Date()
+    if(period==='daily') return {start:new Date(now.getFullYear(),now.getMonth(),now.getDate()), end:null}
+    if(period==='weekly') return {start:startOfWeek(now), end:null}
+    if(period==='monthly')return {start:startOfMonth(now), end:null}
+    if(period==='yearly') return {start:startOfYear(now), end:null}
+    return {start:new Date(0), end:null}
+  }
+
+  function computeProgress(t){
+    const type=t.kind||t.type // compat
+    const config=t.config||{}
+    const entries=t.entries||[]
+    if(type==='one_time'){
+      return entries.length>0?1:0
+    }
+    if(type==='recurrent'){
+      const win=periodWindow(config.period||'weekly')
+      const count=entries.filter(e=>new Date(e.date)>=win.start).length
+      const target=Math.max(1, Number(config.times||1))
+      return Math.min(1, count/target)
+    }
+    if(type==='limit' || type==='goal'){
+      const total=entries.reduce((a,e)=>a+Number(e.amount||0),0)
+      const limit=Math.max(1, Number(config.limit||0))
+      return Math.min(1, limit? total/limit : 0)
+    }
+    return 0
+  }
+
+  function classForProgress(p){
+    if(p<=0.05) return 'p0'
+    if(p<0.67) return 'p2' // amarillo intermedio
+    return 'p3'            // verde
+  }
+
+  // ======= Auth =======
+  status.textContent='🕓 Conectando...'; status.className='status connecting'
+  onAuthStateChanged(auth, async (user)=>{
+    try{
+      if(user){ uid=user.uid; status.textContent='✅ Conectado'; status.className='status connected'; await loadTasks() }
+      else { status.textContent='🕓 Sesión anónima...'; await signInAnonymously(auth) }
+    }catch(e){ console.error(e); status.textContent='❌ Error al conectar'; status.className='status error' }
+  })
+
+  async function loadTasks(){
+    const snap=await getDocs(collection(db,'usuarios',uid,'tareas'))
+    tasks=[]; snap.forEach(d=>tasks.push({id:d.id,...d.data()}))
+    renderBoard()
+  }
+
+  async function saveTask(t){
+    if(!t.id){ const ref=await addDoc(collection(db,'usuarios',uid,'tareas'),t); t.id=ref.id }
+    else { await setDoc(doc(db,'usuarios',uid,'tareas',t.id),t) }
+  }
+
+  async function deleteTaskFn(id){
+    if(!confirm('¿Eliminar esta actividad?')) return
+    await deleteDoc(doc(db,'usuarios',uid,'tareas',id))
+    tasks = tasks.filter(x=>x.id!==id)
+    $('#modalHist').style.display='none'
+    renderBoard()
+  }
+
+  // ======= Board =======
+  function renderBoard(){
+    const board=$('#board'); board.innerHTML=''
+    tasks.forEach(t=>{
+      const p=computeProgress(t)
+      const ball=document.createElement('div')
+      ball.className=`ball appear ${classForProgress(p)}`
+      ball.title=t.name
+      ball.innerHTML=`<div class="pct">${Math.round(p*100)}%</div><div class="label">${t.name}</div>`
+      ball.addEventListener('click',()=>openEntry(t.id))
+      ball.addEventListener('contextmenu',(e)=>{e.preventDefault(); openHistory(t.id)})
+      board.appendChild(ball)
+    })
+  }
+
+  // ======= Modal crear =======
+  const modalNew=$('#modalNew'), mName=$('#mName'), mType=$('#mType'), typeFields=$('#typeFields')
+  $('#btnAdd').onclick=()=>{ mName.value=''; mType.value='recurrent'; renderTypeFields(); modalNew.style.display='flex' }
+  $('#mCancel').onclick=()=> modalNew.style.display='none'
+  mType.onchange=renderTypeFields
+
+  function renderTypeFields(){
+    const t=mType.value
+    if(t==='one_time'){
+      typeFields.innerHTML='<div class="small">Actividad puntual. Se marcará como completada al registrar la primera entrada.</div>'
+      return
+    }
+    if(t==='recurrent'){
+      typeFields.innerHTML=`
+        <div class="row cols-3">
+          <div><label class="small">Veces por período</label><input id="fTimes" type="number" min="1" value="3"></div>
+          <div><label class="small">Período</label>
+            <select id="fPeriod"><option value="daily">Diario</option><option value="weekly" selected>Semanal</option><option value="monthly">Mensual</option><option value="yearly">Anual</option></select>
+          </div>
+        </div>`
+      return
+    }
+    if(t==='limit' || t==='goal'){
+      typeFields.innerHTML=`
+        <div class="row cols-3">
+          <div><label class="small">Límite/Meta</label><input id="fLimit" type="number" min="1" value="10"></div>
+          <div><label class="small">Tipo de valor</label>
+            <select id="fUnit"><option value="number" selected>Número</option><option value="currency">Moneda</option></select>
+          </div>
+        </div>`
+      return
+    }
+    typeFields.innerHTML=''
+  }
+
+  $('#mCreate').onclick=async()=>{
+    const name=mName.value.trim(); if(!name) return alert('Escribe un nombre')
+    const kind=mType.value
+    const t={ name, kind, config:{}, entries:[], createdAt:new Date().toISOString() }
+    if(kind==='recurrent'){
+      t.config.times = Number($('#fTimes').value||1)
+      t.config.period = $('#fPeriod').value
+    }
+    if(kind==='limit' || kind==='goal'){
+      t.config.limit = Number($('#fLimit').value||0)
+      t.config.unit  = $('#fUnit').value // number | currency
+    }
+    await saveTask(t)
+    modalNew.style.display='none'
+    tasks.push(t)
+    renderBoard()
+  }
+
+  // ======= Modal entrada =======
+  const modalEntry=$('#modalEntry'), eTitle=$('#eTitle'), eComment=$('#eComment'), eValueWrap=$('#eValueWrap'), eValue=$('#eValue'), eValueLbl=$('#eValueLbl')
+  function openEntry(id){ selected=id; const t=tasks.find(x=>x.id===id); const k=t.kind||t.type
+    eTitle.textContent = `Registrar: ${t.name}`
+    eComment.value=''
+    if(k==='limit' || k==='goal'){
+      eValueWrap.style.display='block'; eValue.value=''
+      eValueLbl.textContent = t.config.unit==='currency' ? 'Monto' : 'Valor'
+    } else { eValueWrap.style.display='none'; eValue.value='' }
+    modalEntry.style.display='flex'
+  }
+  $('#eCancel').onclick=()=> modalEntry.style.display='none'
+  $('#eSave').onclick=async()=>{
+    const t=tasks.find(x=>x.id===selected); const k=t.kind||t.type
+    const entry={ date:new Date().toISOString(), text:eComment.value.trim() }
+    if(k==='limit' || k==='goal') entry.amount = Number(eValue.value||0)
+    t.entries = t.entries || []; t.entries.push(entry)
+    await saveTask(t)
+    modalEntry.style.display='none'
+    renderBoard()
+  }
+
+  // ======= Historial + Insights =======
+  const modalHist=$('#modalHist'), hTitle=$('#hTitle'), hList=$('#hList')
+  function openHistory(id){ selected=id; const t=tasks.find(x=>x.id===id); hTitle.textContent=t.name; renderHistory(t); modalHist.style.display='flex' }
+  $('#hClose').onclick=()=> modalHist.style.display='none'
+  $('#hDelete').onclick=()=> deleteTaskFn(selected)
+
+  function renderHistory(t){
+    // lista
+    hList.innerHTML=''
+    ;(t.entries||[]).slice().reverse().forEach(e=>{
+      const div=document.createElement('div'); div.className='entry'
+      const val = (t.kind==='limit'||t.kind==='goal') && (e.amount||e.amount===0) ? `<br><b>${t.config.unit==='currency'?'$':''}${e.amount}</b>` : ''
+      div.innerHTML = `<b>${new Date(e.date).toLocaleString()}</b><br>${(e.text||'').replace(/</g,'&lt;')}${val}`
+      hList.append(div)
+    })
+    // chart
+    const ctx = $('#hChart').getContext('2d')
+    if(chart) chart.destroy()
+    const k=t.kind||t.type
+    if(k==='recurrent'){
+      // barras por día de la última semana
+      const win=periodWindow(t.config.period||'weekly').start
+      const buckets={}
+      ;(t.entries||[]).forEach(e=>{ const d=new Date(e.date); if(d>=win){ const key=d.toISOString().slice(0,10); buckets[key]=(buckets[key]||0)+1 } })
+      const labels=Object.keys(buckets).sort(); const data=labels.map(k=>buckets[k])
+      chart=new Chart(ctx,{type:'bar',data:{labels,datasets:[{label:'Entradas',data}]}})
+    } else if(k==='limit' || k==='goal'){
+      const total=(t.entries||[]).reduce((a,e)=>a+Number(e.amount||0),0)
+      const limit=Math.max(1, Number(t.config.limit||0))
+      chart=new Chart(ctx,{type:'doughnut',data:{labels:['Progreso','Restante'],datasets:[{data:[total,Math.max(0,limit-total)]}]}})
+    } else { // one_time
+      const done=(t.entries||[]).length>0?1:0
+      chart=new Chart(ctx,{type:'doughnut',data:{labels:['Hecho','Pendiente'],datasets:[{data:[done,1-done]}]}})
+    }
+  }
+
+  // cerrar modales con fondo
+  document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{ if(e.target===m) m.style.display='none' }))
+
+  </script>
 </body>
 </html>
