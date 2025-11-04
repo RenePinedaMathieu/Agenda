@@ -23,7 +23,7 @@ h1{font-size:1.8rem;margin:0;background:linear-gradient(90deg,var(--primary),var
 .btn:hover{transform:translateY(-1px)}.btn.gray{background:#9ca3af}.btn.danger{background:var(--danger)}
 #board{margin-top:18px;display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:18px;max-width:1000px;width:100%}
 
-/* Pelotas con torta circular (conic-gradient) */
+/* Pelotas */
 .ball{
   position:relative;width:120px;height:120px;border-radius:50%;
   display:flex;align-items:center;justify-content:center;
@@ -67,7 +67,7 @@ input,select,textarea{width:100%;padding:10px;border:1px solid #cbd5e1;border-ra
 
   <section id="board"></section>
 
-  <!-- Modal: Crear/Editar actividad -->
+  <!-- Modal Crear/Editar -->
   <div class="modal" id="modalNew">
     <div class="box">
       <h2 style="margin-top:0">Actividad</h2>
@@ -91,7 +91,7 @@ input,select,textarea{width:100%;padding:10px;border:1px solid #cbd5e1;border-ra
     </div>
   </div>
 
-  <!-- Modal: Entrada / registro -->
+  <!-- Modal Entrada -->
   <div class="modal" id="modalEntry">
     <div class="box">
       <h2 id="eTitle" style="margin-top:0">Registrar</h2>
@@ -109,7 +109,7 @@ input,select,textarea{width:100%;padding:10px;border:1px solid #cbd5e1;border-ra
     </div>
   </div>
 
-  <!-- Modal: Historial + Insights por actividad -->
+  <!-- Modal Historial -->
   <div class="modal" id="modalHist">
     <div class="box">
       <div style="display:flex;justify-content:space-between;align-items:center">
@@ -121,9 +121,7 @@ input,select,textarea{width:100%;padding:10px;border:1px solid #cbd5e1;border-ra
         </div>
       </div>
       <div class="row cols-2" style="margin-top:8px">
-        <div class="card">
-          <canvas id="hChart" height="180"></canvas>
-        </div>
+        <div class="card"><canvas id="hChart" height="180"></canvas></div>
         <div class="card">
           <div class="small">Entradas recientes</div>
           <div id="hList" class="list"></div>
@@ -132,7 +130,7 @@ input,select,textarea{width:100%;padding:10px;border:1px solid #cbd5e1;border-ra
     </div>
   </div>
 
-  <!-- Modal: Historial Global -->
+  <!-- Modal Historial Global -->
   <div class="modal" id="modalGlobal">
     <div class="box">
       <div style="display:flex;justify-content:space-between;align-items:center">
@@ -150,14 +148,8 @@ input,select,textarea{width:100%;padding:10px;border:1px solid #cbd5e1;border-ra
             <option value="goal">Goal</option>
           </select>
         </div>
-        <div>
-          <label class="small">Desde</label>
-          <input id="gFrom" type="date">
-        </div>
-        <div>
-          <label class="small">Hasta</label>
-          <input id="gTo" type="date">
-        </div>
+        <div><label class="small">Desde</label><input id="gFrom" type="date"></div>
+        <div><label class="small">Hasta</label><input id="gTo" type="date"></div>
       </div>
       <div class="card" style="margin-top:10px">
         <div class="small">Entradas</div>
@@ -166,326 +158,255 @@ input,select,textarea{width:100%;padding:10px;border:1px solid #cbd5e1;border-ra
     </div>
   </div>
 
-  <script type="module">
-  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js'
-  import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js'
-  import { getFirestore, collection, addDoc, getDocs, setDoc, doc, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js'
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js'
+import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js'
+import { getFirestore, collection, addDoc, getDocs, setDoc, doc, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js'
 
-  // === Tu config Firebase (la misma que ya usabas) ===
-  const firebaseConfig = {
-    apiKey: 'AIzaSyDlJGGfe87b6SVzJ_LcRCtQ7lnSTkvQajI',
-    authDomain: 'agenda-e4d10.firebaseapp.com',
-    projectId: 'agenda-e4d10',
-    storageBucket: 'agenda-e4d10.firebasestorage.app',
-    messagingSenderId: '537185978413',
-    appId: '1:537185978413:web:f3d2561fc7a559e33010a4',
-    measurementId: 'G-R3R4S8JK23'
+const firebaseConfig = {
+  apiKey: 'AIzaSyDlJGGfe87b6SVzJ_LcRCtQ7lnSTkvQajI',
+  authDomain: 'agenda-e4d10.firebaseapp.com',
+  projectId: 'agenda-e4d10',
+  storageBucket: 'agenda-e4d10.firebasestorage.app',
+  messagingSenderId: '537185978413',
+  appId: '1:537185978413:web:f3d2561fc7a559e33010a4',
+  measurementId: 'G-R3R4S8JK23'
+}
+
+const app = initializeApp(firebaseConfig)
+const auth = getAuth(app)
+const db = getFirestore(app)
+
+let uid=null; let tasks=[]; let selected=null; let chart=null
+const $ = q => document.querySelector(q)
+const status = $('#status')
+
+// ======= Helpers =======
+function formatNumber(num){ return isNaN(num)?num:num.toLocaleString('es-CL') }
+
+const startOfWeek = (d) => { const x=new Date(d); const day=(x.getDay()+6)%7; x.setDate(x.getDate()-day); x.setHours(0,0,0,0); return x }
+const startOfMonth = (d)=>{const x=new Date(d); x.setDate(1); x.setHours(0,0,0,0); return x}
+const startOfYear  = (d)=>{const x=new Date(d); x.setMonth(0,1); x.setHours(0,0,0,0); return x}
+
+function periodWindow(period){
+  const now=new Date()
+  if(period==='daily') return {start:new Date(now.getFullYear(),now.getMonth(),now.getDate()), end:null}
+  if(period==='weekly') return {start:startOfWeek(now), end:null}
+  if(period==='monthly')return {start:startOfMonth(now), end:null}
+  if(period==='yearly') return {start:startOfYear(now), end:null}
+  return {start:new Date(0), end:null}
+}
+
+function computeProgress(t){
+  const type=t.kind||t.type
+  const cfg=t.config||{}
+  const es=t.entries||[]
+  if(type==='one_time') return es.length>0?1:0
+  if(type==='recurrent'){
+    const win=periodWindow(cfg.period||'weekly')
+    const count=es.filter(e=>new Date(e.date)>=win.start).length
+    const target=Math.max(1, Number(cfg.times||1))
+    return Math.min(1, count/target)
   }
-
-  const app = initializeApp(firebaseConfig)
-  const auth = getAuth(app)
-  const db = getFirestore(app)
-
-  let uid=null; let tasks=[]; let selected=null; let chart=null
-  const $ = q => document.querySelector(q)
-  const status = $('#status')
-
-  // ======= Helpers =======
-  const startOfWeek = (d) => { const x=new Date(d); const day=(x.getDay()+6)%7; x.setDate(x.getDate()-day); x.setHours(0,0,0,0); return x }
-  const startOfMonth = (d)=>{const x=new Date(d); x.setDate(1); x.setHours(0,0,0,0); return x}
-  const startOfYear  = (d)=>{const x=new Date(d); x.setMonth(0,1); x.setHours(0,0,0,0); return x}
-
-  function periodWindow(period){
-    const now=new Date()
-    if(period==='daily') return {start:new Date(now.getFullYear(),now.getMonth(),now.getDate()), end:null}
-    if(period==='weekly') return {start:startOfWeek(now), end:null}
-    if(period==='monthly')return {start:startOfMonth(now), end:null}
-    if(period==='yearly') return {start:startOfYear(now), end:null}
-    return {start:new Date(0), end:null}
+  if(type==='limit'||type==='goal'){
+    const total=es.reduce((a,e)=>a+Number(e.amount||0),0)
+    const limit=Math.max(1, Number(cfg.limit||0))
+    return Math.min(1, limit? total/limit : 0)
   }
+  return 0
+}
 
-  function computeProgress(t){
-    const type=t.kind||t.type
-    const cfg=t.config||{}
-    const es=t.entries||[]
-    if(type==='one_time'){
-      return es.length>0?1:0
-    }
-    if(type==='recurrent'){
-      const win=periodWindow(cfg.period||'weekly')
-      const count=es.filter(e=>new Date(e.date)>=win.start).length
-      const target=Math.max(1, Number(cfg.times||1))
-      return Math.min(1, count/target)
-    }
-    if(type==='limit' || type==='goal'){
-      const total=es.reduce((a,e)=>a+Number(e.amount||0),0)
-      const limit=Math.max(1, Number(cfg.limit||0))
-      return Math.min(1, limit? total/limit : 0)
-    }
-    return 0
+function colorForProgress(p){ const hue=Math.round(0+140*p); return `hsl(${hue} 70% 45%)` }
+
+function fractionForTask(t){
+  const type=t.kind||t.type, cfg=t.config||{}, es=t.entries||[]
+  if(type==='one_time'){const num=es.length>0?1:0;return{num,den:1,fracText:`${num}/1`}}
+  if(type==='recurrent'){
+    const win=periodWindow(cfg.period||'weekly')
+    const num=es.filter(e=>new Date(e.date)>=win.start).length
+    const den=Math.max(1,Number(cfg.times||1))
+    return{num,den,fracText:`${num}/${den}`}
   }
-
-  function colorForProgress(p){
-    const hue = Math.round(0 + 140*p) // 0=rojo, 140≈verde
-    return `hsl(${hue} 70% 45%)`
+  if(type==='limit'||type==='goal'){
+    const num=es.reduce((a,e)=>a+Number(e.amount||0),0)
+    const den=Math.max(1,Number(cfg.limit||0))
+    return{num,den,fracText:`${formatNumber(num)}/${formatNumber(den)}`}
   }
+  return{num:0,den:1,fracText:'0/1'}
+}
 
-  function fractionForTask(t){
-    const type=t.kind||t.type
-    const cfg=t.config||{}
-    const es=t.entries||[]
-    if(type==='one_time'){
-      const num=es.length>0?1:0
-      return {num,den:1,fracText:`${num}/1`}
-    }
-    if(type==='recurrent'){
-      const win=periodWindow(cfg.period||'weekly')
-      const num=es.filter(e=>new Date(e.date)>=win.start).length
-      const den=Math.max(1,Number(cfg.times||1))
-      return {num,den,fracText:`${num}/${den}`}
-    }
-    if(type==='limit'||type==='goal'){
-      const num=es.reduce((a,e)=>a+Number(e.amount||0),0)
-      const den=Math.max(1,Number(cfg.limit||0))
-      return {num,den,fracText:`${num}/${den}`}
-    }
-    return {num:0,den:1,fracText:'0/1'}
-  }
+// ======= Auth =======
+status.textContent='🕓 Conectando...'; status.className='status connecting'
+onAuthStateChanged(auth, async (user)=>{
+  try{
+    if(user){ uid=user.uid; status.textContent='✅ Conectado'; status.className='status connected'; await loadTasks() }
+    else { status.textContent='🕓 Sesión anónima...'; await signInAnonymously(auth) }
+  }catch(e){ console.error(e); status.textContent='❌ Error al conectar'; status.className='status error' }
+})
 
-  // ======= Auth =======
-  status.textContent='🕓 Conectando...'; status.className='status connecting'
-  onAuthStateChanged(auth, async (user)=>{
-    try{
-      if(user){ uid=user.uid; status.textContent='✅ Conectado'; status.className='status connected'; await loadTasks() }
-      else { status.textContent='🕓 Sesión anónima...'; await signInAnonymously(auth) }
-    }catch(e){ console.error(e); status.textContent='❌ Error al conectar'; status.className='status error' }
+async function loadTasks(){
+  const snap=await getDocs(collection(db,'usuarios',uid,'tareas'))
+  tasks=[]; snap.forEach(d=>tasks.push({id:d.id,...d.data()}))
+  renderBoard()
+}
+async function saveTask(t){ if(!t.id){const ref=await addDoc(collection(db,'usuarios',uid,'tareas'),t);t.id=ref.id}else{await setDoc(doc(db,'usuarios',uid,'tareas',t.id),t)} }
+async function deleteTaskFn(id){
+  if(!confirm('¿Eliminar esta actividad?')) return
+  await deleteDoc(doc(db,'usuarios',uid,'tareas',id))
+  tasks = tasks.filter(x=>x.id!==id)
+  $('#modalHist').style.display='none'
+  renderBoard()
+}
+
+// ======= Tablero =======
+function renderBoard(){
+  const board=$('#board'); board.innerHTML=''
+  tasks.forEach(t=>{
+    const p=computeProgress(t)
+    const {fracText}=fractionForTask(t)
+    const ball=document.createElement('div')
+    ball.className='ball appear'
+    ball.style.setProperty('--p',(p*100).toFixed(2)+'%')
+    ball.style.setProperty('--col',colorForProgress(p))
+    ball.title=t.name
+    ball.innerHTML=`<div class="center"><div class="frac">${fracText}</div><div class="pct">${Math.round(p*100)}%</div></div><div class="label">${t.name}</div>`
+    ball.addEventListener('click',()=>openEntry(t.id))
+    ball.addEventListener('contextmenu',(e)=>{e.preventDefault();openHistory(t.id)})
+    // Soporte para toque largo (celular)
+    let touchTimer
+    ball.addEventListener('touchstart',()=>{touchTimer=setTimeout(()=>openHistory(t.id),600)})
+    ball.addEventListener('touchend',()=>clearTimeout(touchTimer))
+    board.appendChild(ball)
   })
+}
 
-  async function loadTasks(){
-    const snap=await getDocs(collection(db,'usuarios',uid,'tareas'))
-    tasks=[]; snap.forEach(d=>tasks.push({id:d.id,...d.data()}))
-    renderBoard()
+// ======= Crear / Editar =======
+const modalNew=$('#modalNew'), mName=$('#mName'), mType=$('#mType'), typeFields=$('#typeFields')
+let editMode=false
+
+$('#btnAdd').onclick=()=>{editMode=false;mName.value='';mType.value='recurrent';renderTypeFields();modalNew.style.display='flex'}
+$('#mCancel').onclick=()=>modalNew.style.display='none'
+mType.onchange=renderTypeFields
+function renderTypeFields(){
+  const t=mType.value
+  if(t==='one_time'){typeFields.innerHTML='<div class="small">Actividad puntual.</div>';return}
+  if(t==='recurrent'){
+    typeFields.innerHTML=`<div class="row cols-3">
+      <div><label class="small">Veces por período</label><input id="fTimes" type="number" min="1" value="3"></div>
+      <div><label class="small">Período</label>
+        <select id="fPeriod"><option value="daily">Diario</option><option value="weekly" selected>Semanal</option><option value="monthly">Mensual</option><option value="yearly">Anual</option></select>
+      </div></div>`;return}
+  if(t==='limit'||t==='goal'){
+    typeFields.innerHTML=`<div class="row cols-3">
+      <div><label class="small">Límite/Meta</label><input id="fLimit" type="number" min="1" value="10"></div>
+      <div><label class="small">Tipo de valor</label>
+        <select id="fUnit"><option value="number" selected>Número</option><option value="currency">Moneda</option></select>
+      </div></div>`;return}
+  typeFields.innerHTML=''
+}
+
+$('#mCreate').onclick=async()=>{
+  const name=mName.value.trim(); if(!name) return alert('Escribe un nombre')
+  const kind=mType.value
+  if(editMode){
+    const t=tasks.find(x=>x.id===selected); if(!t) return
+    t.name=name;t.kind=kind;t.type=kind;t.config=t.config||{}
+    if(kind==='recurrent'){t.config.times=Number($('#fTimes').value||1);t.config.period=$('#fPeriod').value;delete t.config.limit;delete t.config.unit}
+    else if(kind==='limit'||kind==='goal'){t.config.limit=Number($('#fLimit').value||0);t.config.unit=$('#fUnit').value;delete t.config.times;delete t.config.period}
+    else{t.config={}}
+    await saveTask(t);modalNew.style.display='none';renderBoard();return
   }
+  const t={name,kind,config:{},entries:[],createdAt:new Date().toISOString()}
+  if(kind==='recurrent'){t.config.times=Number($('#fTimes').value||1);t.config.period=$('#fPeriod').value}
+  if(kind==='limit'||kind==='goal'){t.config.limit=Number($('#fLimit').value||0);t.config.unit=$('#fUnit').value}
+  await saveTask(t);modalNew.style.display='none';tasks.push(t);renderBoard()
+}
 
-  async function saveTask(t){
-    if(!t.id){ const ref=await addDoc(collection(db,'usuarios',uid,'tareas'),t); t.id=ref.id }
-    else { await setDoc(doc(db,'usuarios',uid,'tareas',t.id),t) }
-  }
+// ======= Entrada =======
+const modalEntry=$('#modalEntry'),eTitle=$('#eTitle'),eComment=$('#eComment'),eValueWrap=$('#eValueWrap'),eValue=$('#eValue'),eValueLbl=$('#eValueLbl')
+function openEntry(id){selected=id;const t=tasks.find(x=>x.id===id);const k=t.kind||t.type
+  eTitle.textContent=`Registrar: ${t.name}`;eComment.value=''
+  if(k==='limit'||k==='goal'){eValueWrap.style.display='block';eValue.value='';eValueLbl.textContent=t.config.unit==='currency'?'Monto':'Valor'}else{eValueWrap.style.display='none';eValue.value=''}
+  modalEntry.style.display='flex'
+}
+$('#eCancel').onclick=()=>modalEntry.style.display='none'
+$('#eSave').onclick=async()=>{
+  const t=tasks.find(x=>x.id===selected);const k=t.kind||t.type
+  const entry={date:new Date().toISOString(),text:eComment.value.trim()}
+  if(k==='limit'||k==='goal')entry.amount=Number(eValue.value||0)
+  t.entries=t.entries||[];t.entries.push(entry)
+  await saveTask(t);modalEntry.style.display='none';renderBoard()
+}
 
-  async function deleteTaskFn(id){
-    if(!confirm('¿Eliminar esta actividad?')) return
-    await deleteDoc(doc(db,'usuarios',uid,'tareas',id))
-    tasks = tasks.filter(x=>x.id!==id)
-    $('#modalHist').style.display='none'
-    renderBoard()
-  }
+// ======= Historial =======
+const modalHist=$('#modalHist'),hTitle=$('#hTitle'),hList=$('#hList')
+function openHistory(id){selected=id;const t=tasks.find(x=>x.id===id);hTitle.textContent=t.name;renderHistory(t);modalHist.style.display='flex'}
+$('#hClose').onclick=()=>modalHist.style.display='none'
+$('#hDelete').onclick=()=>deleteTaskFn(selected)
+$('#hEdit').onclick=()=>openEdit(selected)
 
-  // ======= Tablero =======
-  function renderBoard(){
-    const board=$('#board'); board.innerHTML=''
-    tasks.forEach(t=>{
-      const p=computeProgress(t)
-      const {fracText}=fractionForTask(t)
-      const ball=document.createElement('div')
-      ball.className='ball appear'
-      ball.style.setProperty('--p', (p*100).toFixed(2)+'%')
-      ball.style.setProperty('--col', colorForProgress(p))
-      ball.title=t.name
-      ball.innerHTML=`<div class="center"><div class="frac">${fracText}</div><div class="pct">${Math.round(p*100)}%</div></div><div class="label">${t.name}</div>`
-      ball.addEventListener('click',()=>openEntry(t.id))
-      ball.addEventListener('contextmenu',(e)=>{e.preventDefault(); openHistory(t.id)})
-      board.appendChild(ball)
-    })
-  }
-
-  // ======= Crear / Editar actividad =======
-  const modalNew=$('#modalNew'), mName=$('#mName'), mType=$('#mType'), typeFields=$('#typeFields')
-  let editMode=false
-
-  $('#btnAdd').onclick=()=>{ editMode=false; mName.value=''; mType.value='recurrent'; renderTypeFields(); modalNew.style.display='flex' }
-  $('#mCancel').onclick=()=> modalNew.style.display='none'
-  mType.onchange=renderTypeFields
-
-  function renderTypeFields(){
-    const t=mType.value
-    if(t==='one_time'){
-      typeFields.innerHTML='<div class="small">Actividad puntual. Se marcará como completada al registrar la primera entrada.</div>'
-      return
-    }
-    if(t==='recurrent'){
-      typeFields.innerHTML=`
-        <div class="row cols-3">
-          <div><label class="small">Veces por período</label><input id="fTimes" type="number" min="1" value="3"></div>
-          <div><label class="small">Período</label>
-            <select id="fPeriod"><option value="daily">Diario</option><option value="weekly" selected>Semanal</option><option value="monthly">Mensual</option><option value="yearly">Anual</option></select>
-          </div>
-        </div>`
-      return
-    }
-    if(t==='limit' || t==='goal'){
-      typeFields.innerHTML=`
-        <div class="row cols-3">
-          <div><label class="small">Límite/Meta</label><input id="fLimit" type="number" min="1" value="10"></div>
-          <div><label class="small">Tipo de valor</label>
-            <select id="fUnit"><option value="number" selected>Número</option><option value="currency">Moneda</option></select>
-          </div>
-        </div>`
-      return
-    }
-    typeFields.innerHTML=''
-  }
-
-  $('#mCreate').onclick=async()=>{
-    const name=mName.value.trim(); if(!name) return alert('Escribe un nombre')
-    const kind=mType.value
-    if(editMode){
-      const t=tasks.find(x=>x.id===selected); if(!t) return
-      t.name=name; t.kind=kind; t.type=kind; t.config=t.config||{}
-      if(kind==='recurrent'){
-        t.config.times = Number($('#fTimes').value||1)
-        t.config.period = $('#fPeriod').value
-        delete t.config.limit; delete t.config.unit
-      } else if(kind==='limit'||kind==='goal'){
-        t.config.limit = Number($('#fLimit').value||0)
-        t.config.unit  = $('#fUnit').value
-        delete t.config.times; delete t.config.period
-      } else { t.config={} }
-      await saveTask(t)
-      modalNew.style.display='none'
-      renderBoard()
-      return
-    }
-    const t={ name, kind, config:{}, entries:[], createdAt:new Date().toISOString() }
-    if(kind==='recurrent'){
-      t.config.times = Number($('#fTimes').value||1)
-      t.config.period = $('#fPeriod').value
-    }
-    if(kind==='limit' || kind==='goal'){
-      t.config.limit = Number($('#fLimit').value||0)
-      t.config.unit  = $('#fUnit').value
-    }
-    await saveTask(t)
-    modalNew.style.display='none'
-    tasks.push(t)
-    renderBoard()
-  }
-
-  function openEdit(id){
-    selected=id
-    const t=tasks.find(x=>x.id===id); if(!t) return
-    editMode=true
-    mName.value=t.name||''
-    mType.value=t.kind||t.type||'recurrent'
-    renderTypeFields()
-    if((t.kind||t.type)==='recurrent'){
-      $('#fTimes').value = t.config?.times || 1
-      $('#fPeriod').value = t.config?.period || 'weekly'
-    }
-    if((t.kind||t.type)==='limit'||(t.kind||t.type)==='goal'){
-      $('#fLimit').value = t.config?.limit || 10
-      $('#fUnit').value = t.config?.unit || 'number'
-    }
-    modalNew.style.display='flex'
-  }
-
-  // ======= Entrada =======
-  const modalEntry=$('#modalEntry'), eTitle=$('#eTitle'), eComment=$('#eComment'), eValueWrap=$('#eValueWrap'), eValue=$('#eValue'), eValueLbl=$('#eValueLbl')
-  function openEntry(id){ selected=id; const t=tasks.find(x=>x.id===id); const k=t.kind||t.type
-    eTitle.textContent = `Registrar: ${t.name}`
-    eComment.value=''
-    if(k==='limit' || k==='goal'){
-      eValueWrap.style.display='block'; eValue.value=''
-      eValueLbl.textContent = t.config.unit==='currency' ? 'Monto' : 'Valor'
-    } else { eValueWrap.style.display='none'; eValue.value='' }
-    modalEntry.style.display='flex'
-  }
-  $('#eCancel').onclick=()=> modalEntry.style.display='none'
-  $('#eSave').onclick=async()=>{
-    const t=tasks.find(x=>x.id===selected); const k=t.kind||t.type
-    const entry={ date:new Date().toISOString(), text:eComment.value.trim() }
-    if(k==='limit' || k==='goal') entry.amount = Number(eValue.value||0)
-    t.entries = t.entries || []; t.entries.push(entry)
-    await saveTask(t)
-    modalEntry.style.display='none'
-    renderBoard()
-  }
-
-  // ======= Historial por actividad =======
-  const modalHist=$('#modalHist'), hTitle=$('#hTitle'), hList=$('#hList')
-  function openHistory(id){ selected=id; const t=tasks.find(x=>x.id===id); hTitle.textContent=t.name; renderHistory(t); modalHist.style.display='flex' }
-  $('#hClose').onclick=()=> modalHist.style.display='none'
-  $('#hDelete').onclick=()=> deleteTaskFn(selected)
-  $('#hEdit').onclick=()=> openEdit(selected)
-
-  function renderHistory(t){
-    hList.innerHTML=''
-    ;(t.entries||[]).slice().reverse().forEach((e,idxRev)=>{
-      const idx = (t.entries.length-1) - idxRev
-      const div=document.createElement('div'); div.className='entry'
-      const val = (t.kind==='limit'||t.kind==='goal') && (e.amount||e.amount===0) ? `<br><b>${t.config.unit==='currency'?'$':''}${e.amount}</b>` : ''
-      div.innerHTML = `<div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
-        <div><b>${new Date(e.date).toLocaleString()}</b><br>${(e.text||'').replace(/</g,'&lt;')}${val}</div>
-        <button class="btn danger js-del-entry" data-idx="${idx}">Eliminar</button>
-      </div>`
-      hList.append(div)
-    })
-    const ctx = $('#hChart').getContext('2d')
-    if(chart) chart.destroy()
-    const k=t.kind||t.type
-    if(k==='recurrent'){
-      const win=periodWindow(t.config.period||'weekly').start
-      const buckets={}
-      ;(t.entries||[]).forEach(e=>{ const d=new Date(e.date); if(d>=win){ const key=d.toISOString().slice(0,10); buckets[key]=(buckets[key]||0)+1 } })
-      const labels=Object.keys(buckets).sort(); const data=labels.map(key=>buckets[key])
-      chart=new Chart(ctx,{type:'bar',data:{labels,datasets:[{label:'Entradas',data}]}})
-    } else if(k==='limit' || k==='goal'){
-      const total=(t.entries||[]).reduce((a,e)=>a+Number(e.amount||0),0)
-      const limit=Math.max(1, Number(t.config.limit||0))
-      chart=new Chart(ctx,{type:'doughnut',data:{labels:['Progreso','Restante'],datasets:[{data:[total,Math.max(0,limit-total)]}]}})
-    } else { // one_time
-      const done=(t.entries||[]).length>0?1:0
-      chart=new Chart(ctx,{type:'doughnut',data:{labels:['Hecho','Pendiente'],datasets:[{data:[done,1-done]}]}})
-    }
-  }
-
-  // Eliminar entrada (delegación)
-  hList.addEventListener('click', async (e)=>{
-    const btn = e.target.closest('.js-del-entry'); if(!btn) return
-    const idx = Number(btn.dataset.idx)
-    const t = tasks.find(x=>x.id===selected); if(!t) return
-    if(!confirm('¿Eliminar esta entrada?')) return
-    t.entries.splice(idx,1)
-    await saveTask(t)
-    renderHistory(t)
-    renderBoard()
+function renderHistory(t){
+  hList.innerHTML=''
+  ;(t.entries||[]).slice().reverse().forEach((e,idxRev)=>{
+    const idx=(t.entries.length-1)-idxRev
+    const div=document.createElement('div');div.className='entry'
+    const val=(t.kind==='limit'||t.kind==='goal')&&(e.amount||e.amount===0)?`<br><b>${t.config.unit==='currency'?'$':''}${formatNumber(e.amount)}</b>`:''
+    div.innerHTML=`<div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
+      <div><b>${new Date(e.date).toLocaleString()}</b><br>${(e.text||'').replace(/</g,'&lt;')}${val}</div>
+      <button class="btn danger js-del-entry" data-idx="${idx}">Eliminar</button></div>`
+    hList.append(div)
   })
-
-  // ======= Historial global =======
-  const modalGlobal=$('#modalGlobal'), gType=$('#gType'), gFrom=$('#gFrom'), gTo=$('#gTo'), gList=$('#gList')
-  $('#btnGlobal').onclick=()=>{ renderGlobal(); modalGlobal.style.display='flex' }
-  $('#gClose').onclick=()=> modalGlobal.style.display='none'
-
-  function renderGlobal(){
-    gList.innerHTML=''
-    const tf=gType.value
-    const dFrom=gFrom.value? new Date(gFrom.value):null
-    const dTo=gTo.value? new Date(gTo.value+'T23:59:59'):null
-    const all=[]
-    tasks.forEach(t=> (t.entries||[]).forEach((e,idx)=> all.push({t,e,idx})) )
-    all.sort((a,b)=> new Date(b.e.date)-new Date(a.e.date))
-    all.forEach(({t,e,idx})=>{
-      if(tf!=='all' && (t.kind||t.type)!==tf) return
-      const d=new Date(e.date); if(dFrom && d<dFrom) return; if(dTo && d>dTo) return
-      const row=document.createElement('div'); row.className='entry'
-      const val = ((t.kind==='limit'||t.kind==='goal') && (e.amount||e.amount===0))
-        ? `<b> ${t.config?.unit==='currency'?'$':''}${e.amount}</b>`:''
-      row.innerHTML=`<b>${t.name}</b> — ${d.toLocaleString()}<br>${(e.text||'').replace(/</g,'&lt;')} ${val}`
-      gList.appendChild(row)
-    })
+  const ctx=$('#hChart').getContext('2d')
+  if(chart) chart.destroy()
+  const k=t.kind||t.type
+  if(k==='recurrent'){
+    const win=periodWindow(t.config.period||'weekly').start
+    const buckets={};(t.entries||[]).forEach(e=>{const d=new Date(e.date);if(d>=win){const key=d.toISOString().slice(0,10);buckets[key]=(buckets[key]||0)+1}})
+    const labels=Object.keys(buckets).sort();const data=labels.map(key=>buckets[key])
+    chart=new Chart(ctx,{type:'bar',data:{labels,datasets:[{label:'Entradas',data}]},options:{scales:{y:{ticks:{callback:v=>formatNumber(v)}}}}})
+  }else if(k==='limit'||k==='goal'){
+    const total=(t.entries||[]).reduce((a,e)=>a+Number(e.amount||0),0)
+    const limit=Math.max(1,Number(t.config.limit||0))
+    chart=new Chart(ctx,{type:'doughnut',data:{labels:[`Progreso (${formatNumber(total)})`,`Restante (${formatNumber(Math.max(0,limit-total))})`],datasets:[{data:[total,Math.max(0,limit-total)]}]}})
+  }else{
+    const done=(t.entries||[]).length>0?1:0
+    chart=new Chart(ctx,{type:'doughnut',data:{labels:['Hecho','Pendiente'],datasets:[{data:[done,1-done]}]}})
   }
+}
 
-  // cerrar modales con click en fondo
-  document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{ if(e.target===m) m.style.display='none' }))
-  </script>
+hList.addEventListener('click',async(e)=>{
+  const btn=e.target.closest('.js-del-entry');if(!btn)return
+  const idx=Number(btn.dataset.idx)
+  const t=tasks.find(x=>x.id===selected);if(!t)return
+  if(!confirm('¿Eliminar esta entrada?'))return
+  t.entries.splice(idx,1)
+  await saveTask(t);renderHistory(t);renderBoard()
+})
+
+// ======= Historial Global =======
+const modalGlobal=$('#modalGlobal'),gType=$('#gType'),gFrom=$('#gFrom'),gTo=$('#gTo'),gList=$('#gList')
+$('#btnGlobal').onclick=()=>{renderGlobal();modalGlobal.style.display='flex'}
+$('#gClose').onclick=()=>modalGlobal.style.display='none'
+function renderGlobal(){
+  gList.innerHTML=''
+  const tf=gType.value
+  const dFrom=gFrom.value?new Date(gFrom.value):null
+  const dTo=gTo.value?new Date(gTo.value+'T23:59:59'):null
+  const all=[];tasks.forEach(t=>(t.entries||[]).forEach((e,idx)=>all.push({t,e,idx})))
+  all.sort((a,b)=>new Date(b.e.date)-new Date(a.e.date))
+  all.forEach(({t,e,idx})=>{
+    if(tf!=='all'&&(t.kind||t.type)!==tf)return
+    const d=new Date(e.date);if(dFrom&&d<dFrom)return;if(dTo&&d>dTo)return
+    const val=((t.kind==='limit'||t.kind==='goal')&&(e.amount||e.amount===0))
+      ?`<b> ${t.config?.unit==='currency'?'$':''}${formatNumber(e.amount)}</b>`:''
+    const row=document.createElement('div');row.className='entry'
+    row.innerHTML=`<b>${t.name}</b> — ${d.toLocaleString()}<br>${(e.text||'').replace(/</g,'&lt;')} ${val}`
+    gList.appendChild(row)
+  })
+}
+
+// cerrar modales
+document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.style.display='none'}))
+</script>
 </body>
 </html>
