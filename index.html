@@ -9,91 +9,69 @@
 <style>
 :root{
   --primary:#6366f1;--secondary:#a5b4fc;--ok:#10b981;--warn:#f59e0b;--danger:#ef4444;
-  --ink:#111827;--muted:#6b7280;--card:#ffffff
+  --ink:#111827;--bg:#f6f7ff;--muted:#6b7280;--card:#ffffff
 }
-*{box-sizing:border-box;margin:0;padding:0}
+*{box-sizing:border-box}
 body{
+  margin:0;
   font-family:Inter,system-ui,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial;
+  /* Fondo claramente distinto */
   background:linear-gradient(135deg,#ffe5b4 0%,#ffd1dc 50%,#fff8e1 100%);
   color:var(--ink);
-  padding:16px;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  min-height:100vh;
+  padding:24px;
+  display:flex;flex-direction:column;align-items:center
 }
-header{
-  display:flex;flex-wrap:wrap;gap:12px;
-  align-items:center;justify-content:space-between;
-  max-width:1000px;width:100%;
-}
-h1{
-  font-size:1.9rem;
-  background:linear-gradient(90deg,var(--primary),var(--secondary));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-}
+header{display:flex;gap:12px;align-items:center;justify-content:space-between;max-width:1000px;width:100%;flex-wrap:wrap}
+h1{font-size:1.8rem;margin:0;background:linear-gradient(90deg,var(--primary),var(--secondary));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .status{font-size:.95rem;padding:6px 12px;border-radius:8px;font-weight:600}
 .status.connecting{background:#fef9c3;color:#92400e}
 .status.connected{background:#dcfce7;color:#166534}
 .status.error{background:#fee2e2;color:#991b1b}
-.btn{
-  background:var(--primary);color:#fff;border:none;border-radius:12px;
-  padding:10px 14px;cursor:pointer;font-weight:700;
-  transition:transform .15s ease;white-space:nowrap;
-}
-.btn:hover{transform:translateY(-1px)}
-.btn.gray{background:#9ca3af}.btn.danger{background:var(--danger)}
+.btn{background:var(--primary);color:#fff;border:none;border-radius:12px;padding:10px 14px;cursor:pointer;font-weight:700;transition:transform .15s ease}
+.btn:hover{transform:translateY(-1px)}.btn.gray{background:#9ca3af}.btn.danger{background:var(--danger)}
 
-/* Secciones */
-.section{margin-top:28px;width:100%;max-width:1000px;}
-.section h2{margin-bottom:14px;border-bottom:2px solid rgba(0,0,0,.1);padding-bottom:4px;font-size:1.25rem;color:#1e293b}
-
-/* Pelotas */
-.board{
+/* Tablero: pelotas más grandes y menos por pantalla */
+#board{
+  margin-top:18px;
   display:grid;
   grid-template-columns:repeat(auto-fill,minmax(170px,1fr));
   gap:22px;
+  max-width:1000px;width:100%;
   justify-items:center;
 }
+
+/* Pelotas */
 .ball{
   position:relative;width:170px;height:170px;border-radius:50%;
   display:flex;align-items:center;justify-content:center;
-  box-shadow:0 10px 25px rgba(0,0,0,.15);
-  cursor:pointer;transition:transform .2s ease;
+  box-shadow:0 10px 25px rgba(0,0,0,.15);cursor:pointer;transition:transform .15s ease;
   --p:0; --col:#10b981;
   background:conic-gradient(var(--col) var(--p), #e5e7eb 0);
 }
-.ball:hover{transform:translateY(-3px) scale(1.05)}
-.ball .center{
-  position:absolute;inset:0;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;pointer-events:none
-}
-.ball .frac{font-weight:800;font-size:1.2rem;color:#111827}
+.ball:hover{transform:translateY(-3px) scale(1.03)}
+.ball .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none}
+.ball .frac{font-weight:800;font-size:1.15rem;color:#111827}
 .ball .pct{margin-top:2px;font-weight:700;font-size:1rem;color:#374151;opacity:.9}
 .ball .label{
   position:absolute;bottom:-10px;left:50%;transform:translateX(-50%);
-  font-size:1rem;font-weight:700;color:#1e293b;text-align:center;
-  white-space:nowrap;max-width:170px;text-overflow:ellipsis;overflow:hidden;
+  font-size:1rem;font-weight:700;color:#1f2937;white-space:nowrap;max-width:170px;text-overflow:ellipsis;overflow:hidden;text-align:center
 }
 .ball.appear{animation:pop .25s ease}
 @keyframes pop{0%{transform:scale(.6);opacity:.3}100%{transform:scale(1);opacity:1}}
 
-/* Modales */
+/* tarjetas y modales */
 .card{background:var(--card);border-radius:16px;box-shadow:0 6px 18px rgba(99,102,241,.08);padding:16px}
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;padding:16px;z-index:1000}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;padding:16px}
 .modal .box{background:#fff;border-radius:14px;box-shadow:0 10px 24px rgba(0,0,0,.15);padding:20px;max-width:640px;width:100%}
 input,select,textarea{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:10px;font-size:.95rem}
 .row{display:grid;gap:10px}
 .row.cols-2{grid-template-columns:1fr 1fr}
 .row.cols-3{grid-template-columns:1fr 1fr 1fr}
 @media(max-width:780px){
-  body{padding:10px}
-  h1{font-size:1.6rem;text-align:center;width:100%}
-  header{justify-content:center}
-  .board{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:18px}
-  .ball{width:150px;height:150px}
-  .label{font-size:.95rem}
   .row.cols-2,.row.cols-3{grid-template-columns:1fr}
+  #board{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:18px}
+  .ball{width:150px;height:150px}
+  .ball .label{font-size:.95rem}
 }
 .small{font-size:.9rem;color:var(--muted)}
 .list{display:grid;gap:10px;max-height:300px;overflow:auto;margin-top:8px}
@@ -102,28 +80,17 @@ input,select,textarea{width:100%;padding:10px;border:1px solid #cbd5e1;border-ra
 </head>
 <body>
   <header>
-    <h1>Agenda Pelotas</h1>
+    <h1>📅 Agenda Pelotas</h1>
     <div class="status connecting" id="status">🕓 Conectando...</div>
     <div>
-      <button class="btn" id="btnAdd">+ Agregar</button>
+      <button class="btn" id="btnAdd">+ Agregar actividad</button>
       <button class="btn gray" id="btnGlobal">Historial global</button>
     </div>
   </header>
 
-  <section class="section" id="secRecurrentes">
-    <h2>Recurrentes</h2>
-    <div class="board" id="boardRecurrentes"></div>
-  </section>
-  <section class="section" id="secOneTime">
-    <h2>One Time</h2>
-    <div class="board" id="boardOneTime"></div>
-  </section>
-  <section class="section" id="secLimit">
-    <h2>Límites / Metas</h2>
-    <div class="board" id="boardLimit"></div>
-  </section>
+  <section id="board"></section>
 
-  <!-- Modales (idénticos funcionalmente a la versión anterior) -->
+  <!-- Modal Crear/Editar -->
   <div class="modal" id="modalNew">
     <div class="box">
       <h2 style="margin-top:0">Actividad</h2>
@@ -133,9 +100,9 @@ input,select,textarea{width:100%;padding:10px;border:1px solid #cbd5e1;border-ra
           <label class="small">Tipo</label>
           <select id="mType">
             <option value="one_time">One time</option>
-            <option value="recurrent" selected>Recurrente</option>
-            <option value="limit">Límite</option>
-            <option value="goal">Meta</option>
+            <option value="recurrent" selected>Recurrent</option>
+            <option value="limit">Limit</option>
+            <option value="goal">Goal</option>
           </select>
         </div>
       </div>
@@ -147,7 +114,72 @@ input,select,textarea{width:100%;padding:10px;border:1px solid #cbd5e1;border-ra
     </div>
   </div>
 
-  <!-- (Los otros modales quedan igual, no los repito por espacio) -->
+  <!-- Modal Entrada -->
+  <div class="modal" id="modalEntry">
+    <div class="box">
+      <h2 id="eTitle" style="margin-top:0">Registrar</h2>
+      <div class="row">
+        <textarea id="eComment" rows="3" placeholder="Comentario opcional..."></textarea>
+        <div id="eValueWrap" style="display:none">
+          <label class="small" id="eValueLbl">Valor</label>
+          <input id="eValue" type="number" placeholder="0">
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+        <button class="btn gray" id="eCancel">Cancelar</button>
+        <button class="btn" id="eSave">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Historial -->
+  <div class="modal" id="modalHist">
+    <div class="box">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h2 id="hTitle" style="margin:0">Historial</h2>
+        <div style="display:flex;gap:8px">
+          <button class="btn" id="hEdit">✏️ Editar</button>
+          <button class="btn danger" id="hDelete">Eliminar actividad</button>
+          <button class="btn gray" id="hClose">Cerrar</button>
+        </div>
+      </div>
+      <div class="row cols-2" style="margin-top:8px">
+        <div class="card"><canvas id="hChart" height="180"></canvas></div>
+        <div class="card">
+          <div class="small">Entradas recientes</div>
+          <div id="hList" class="list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Historial Global -->
+  <div class="modal" id="modalGlobal">
+    <div class="box">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h2 style="margin:0">Historial global</h2>
+        <button class="btn gray" id="gClose">Cerrar</button>
+      </div>
+      <div class="row cols-3" style="margin-top:8px">
+        <div>
+          <label class="small">Tipo</label>
+          <select id="gType">
+            <option value="all" selected>Todos</option>
+            <option value="one_time">One time</option>
+            <option value="recurrent">Recurrent</option>
+            <option value="limit">Limit</option>
+            <option value="goal">Goal</option>
+          </select>
+        </div>
+        <div><label class="small">Desde</label><input id="gFrom" type="date"></div>
+        <div><label class="small">Hasta</label><input id="gTo" type="date"></div>
+      </div>
+      <div class="card" style="margin-top:10px">
+        <div class="small">Entradas</div>
+        <div id="gList" class="list"></div>
+      </div>
+    </div>
+  </div>
 
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js'
@@ -155,61 +187,281 @@ import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gsta
 import { getFirestore, collection, addDoc, getDocs, setDoc, doc, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js'
 
 const firebaseConfig = {
-  apiKey:'AIzaSyDlJGGfe87b6SVzJ_LcRCtQ7lnSTkvQajI',
-  authDomain:'agenda-e4d10.firebaseapp.com',
-  projectId:'agenda-e4d10',
-  storageBucket:'agenda-e4d10.firebasestorage.app',
-  messagingSenderId:'537185978413',
-  appId:'1:537185978413:web:f3d2561fc7a559e33010a4'
+  apiKey: 'AIzaSyDlJGGfe87b6SVzJ_LcRCtQ7lnSTkvQajI',
+  authDomain: 'agenda-e4d10.firebaseapp.com',
+  projectId: 'agenda-e4d10',
+  storageBucket: 'agenda-e4d10.firebasestorage.app',
+  messagingSenderId: '537185978413',
+  appId: '1:537185978413:web:f3d2561fc7a559e33010a4',
+  measurementId: 'G-R3R4S8JK23'
 }
-const app=initializeApp(firebaseConfig)
-const auth=getAuth(app)
-const db=getFirestore(app)
 
-let uid=null;let tasks=[];let selected=null
-const $=q=>document.querySelector(q)
-const status=$('#status')
+const app = initializeApp(firebaseConfig)
+const auth = getAuth(app)
+const db = getFirestore(app)
 
-function formatNumber(num){return isNaN(num)?num:num.toLocaleString('es-CL')}
-const startOfWeek=d=>{const x=new Date(d);const day=(x.getDay()+6)%7;x.setDate(x.getDate()-day);x.setHours(0,0,0,0);return x}
-const startOfMonth=d=>{const x=new Date(d);x.setDate(1);x.setHours(0,0,0,0);return x}
-function periodWindow(p){const now=new Date();if(p==='weekly')return{start:startOfWeek(now)};if(p==='monthly')return{start:startOfMonth(now)};return{start:new Date(0)}}
-function computeProgress(t){const type=t.kind||t.type;const cfg=t.config||{};const es=t.entries||[];
- if(type==='one_time')return es.length>0?1:0;
- if(type==='recurrent'){const win=periodWindow(cfg.period||'weekly');const count=es.filter(e=>new Date(e.date)>=win.start).length;const target=Math.max(1,Number(cfg.times||1));return Math.min(1,count/target);}
- if(type==='limit'||type==='goal'){const total=es.reduce((a,e)=>a+Number(e.amount||0),0);const limit=Math.max(1,Number(cfg.limit||0));return Math.min(1,limit?total/limit:0);}
- return 0;}
-function colorForProgress(p){const hue=Math.round(0+140*p);return `hsl(${hue} 70% 45%)`}
-function fractionForTask(t){const type=t.kind||t.type,cfg=t.config||{},es=t.entries||[];if(type==='one_time'){const num=es.length>0?1:0;return{fracText:`${num}/1`}}if(type==='recurrent'){const win=periodWindow(cfg.period||'weekly');const num=es.filter(e=>new Date(e.date)>=win.start).length;const den=Math.max(1,Number(cfg.times||1));return{fracText:`${num}/${den}`}}if(type==='limit'||type==='goal'){const num=es.reduce((a,e)=>a+Number(e.amount||0),0);const den=Math.max(1,Number(cfg.limit||0));return{fracText:`${formatNumber(num)}/${formatNumber(den)}`}}return{fracText:'0/1'}}
+let uid=null; let tasks=[]; let selected=null; let chart=null
+const $ = q => document.querySelector(q)
+const status = $('#status')
 
-status.textContent='🕓 Conectando...';status.className='status connecting'
-onAuthStateChanged(auth,async user=>{
- if(user){uid=user.uid;status.textContent='✅ Conectado';status.className='status connected';await loadTasks();}
- else{await signInAnonymously(auth);}
+// ======= Helpers =======
+function formatNumber(num){ return isNaN(num)?num:num.toLocaleString('es-CL') }
+
+const startOfWeek = (d) => { const x=new Date(d); const day=(x.getDay()+6)%7; x.setDate(x.getDate()-day); x.setHours(0,0,0,0); return x }
+const startOfMonth = (d)=>{const x=new Date(d); x.setDate(1); x.setHours(0,0,0,0); return x}
+const startOfYear  = (d)=>{const x=new Date(d); x.setMonth(0,1); x.setHours(0,0,0,0); return x}
+
+function periodWindow(period){
+  const now=new Date()
+  if(period==='daily') return {start:new Date(now.getFullYear(),now.getMonth(),now.getDate()), end:null}
+  if(period==='weekly') return {start:startOfWeek(now), end:null}
+  if(period==='monthly')return {start:startOfMonth(now), end:null}
+  if(period==='yearly') return {start:startOfYear(now), end:null}
+  return {start:new Date(0), end:null}
+}
+
+function computeProgress(t){
+  const type=t.kind||t.type
+  const cfg=t.config||{}
+  const es=t.entries||[]
+  if(type==='one_time') return es.length>0?1:0
+  if(type==='recurrent'){
+    const win=periodWindow(cfg.period||'weekly')
+    const count=es.filter(e=>new Date(e.date)>=win.start).length
+    const target=Math.max(1, Number(cfg.times||1))
+    return Math.min(1, count/target)
+  }
+  if(type==='limit'||type==='goal'){
+    const total=es.reduce((a,e)=>a+Number(e.amount||0),0)
+    const limit=Math.max(1, Number(cfg.limit||0))
+    return Math.min(1, limit? total/limit : 0)
+  }
+  return 0
+}
+
+function colorForProgress(p){
+  const hue=Math.round(0+140*p)
+  return `hsl(${hue} 70% 45%)`
+}
+
+function fractionForTask(t){
+  const type=t.kind||t.type, cfg=t.config||{}, es=t.entries||[]
+  if(type==='one_time'){
+    const num=es.length>0?1:0
+    return {num,den:1,fracText:`${num}/1`}
+  }
+  if(type==='recurrent'){
+    const win=periodWindow(cfg.period||'weekly')
+    const num=es.filter(e=>new Date(e.date)>=win.start).length
+    const den=Math.max(1,Number(cfg.times||1))
+    return {num,den,fracText:`${num}/${den}`}
+  }
+  if(type==='limit'||type==='goal'){
+    const num=es.reduce((a,e)=>a+Number(e.amount||0),0)
+    const den=Math.max(1,Number(cfg.limit||0))
+    return {num,den,fracText:`${formatNumber(num)}/${formatNumber(den)}`}
+  }
+  return {num:0,den:1,fracText:'0/1'}
+}
+
+// ======= Auth =======
+status.textContent='🕓 Conectando...'; status.className='status connecting'
+onAuthStateChanged(auth, async (user)=>{
+  try{
+    if(user){ uid=user.uid; status.textContent='✅ Conectado'; status.className='status connected'; await loadTasks() }
+    else { status.textContent='🕓 Sesión anónima...'; await signInAnonymously(auth) }
+  }catch(e){ console.error(e); status.textContent='❌ Error al conectar'; status.className='status error' }
 })
 
 async function loadTasks(){
- const snap=await getDocs(collection(db,'usuarios',uid,'tareas'))
- tasks=[];snap.forEach(d=>tasks.push({id:d.id,...d.data()}))
- renderSections()
+  const snap=await getDocs(collection(db,'usuarios',uid,'tareas'))
+  tasks=[]; snap.forEach(d=>tasks.push({id:d.id,...d.data()}))
+  renderBoard()
 }
-function renderSections(){
- $('#boardRecurrentes').innerHTML=''
- $('#boardOneTime').innerHTML=''
- $('#boardLimit').innerHTML=''
- tasks.forEach(t=>{
-  const p=computeProgress(t)
-  const {fracText}=fractionForTask(t)
-  const ball=document.createElement('div')
-  ball.className='ball appear'
-  ball.style.setProperty('--p',(p*100).toFixed(2)+'%')
-  ball.style.setProperty('--col',colorForProgress(p))
-  ball.innerHTML=`<div class="center"><div class="frac">${fracText}</div><div class="pct">${Math.round(p*100)}%</div></div><div class="label"><b>${t.name}</b></div>`
-  if(t.kind==='recurrent')$('#boardRecurrentes').append(ball)
-  else if(t.kind==='one_time')$('#boardOneTime').append(ball)
-  else $('#boardLimit').append(ball)
- })
+async function saveTask(t){
+  if(!t.id){
+    const ref=await addDoc(collection(db,'usuarios',uid,'tareas'),t);t.id=ref.id
+  }else{
+    await setDoc(doc(db,'usuarios',uid,'tareas',t.id),t)
+  }
 }
+async function deleteTaskFn(id){
+  if(!confirm('¿Eliminar esta actividad?')) return
+  await deleteDoc(doc(db,'usuarios',uid,'tareas',id))
+  tasks = tasks.filter(x=>x.id!==id)
+  $('#modalHist').style.display='none'
+  renderBoard()
+}
+
+// ======= Tablero =======
+function renderBoard(){
+  const board=$('#board'); board.innerHTML=''
+  tasks.forEach(t=>{
+    const p=computeProgress(t)
+    const {fracText}=fractionForTask(t)
+    const ball=document.createElement('div')
+    ball.className='ball appear'
+    ball.style.setProperty('--p',(p*100).toFixed(2)+'%')
+    ball.style.setProperty('--col',colorForProgress(p))
+    ball.title=t.name
+    ball.innerHTML=`<div class="center"><div class="frac">${fracText}</div><div class="pct">${Math.round(p*100)}%</div></div><div class="label"><b>${t.name}</b></div>`
+    ball.addEventListener('click',()=>openEntry(t.id))
+    ball.addEventListener('contextmenu',(e)=>{e.preventDefault();openHistory(t.id)})
+    // Toque largo (celular) → historial
+    let touchTimer
+    ball.addEventListener('touchstart',()=>{touchTimer=setTimeout(()=>openHistory(t.id),600)})
+    ball.addEventListener('touchend',()=>clearTimeout(touchTimer))
+    board.appendChild(ball)
+  })
+}
+
+// ======= Crear / Editar =======
+const modalNew=$('#modalNew'), mName=$('#mName'), mType=$('#mType'), typeFields=$('#typeFields')
+let editMode=false
+
+$('#btnAdd').onclick=()=>{editMode=false;selected=null;mName.value='';mType.value='recurrent';renderTypeFields();modalNew.style.display='flex'}
+$('#mCancel').onclick=()=>modalNew.style.display='none'
+mType.onchange=renderTypeFields
+
+function renderTypeFields(){
+  const t=mType.value
+  if(t==='one_time'){typeFields.innerHTML='<div class="small">Actividad puntual.</div>';return}
+  if(t==='recurrent'){
+    typeFields.innerHTML=`<div class="row cols-3">
+      <div><label class="small">Veces por período</label><input id="fTimes" type="number" min="1" value="3"></div>
+      <div><label class="small">Período</label>
+        <select id="fPeriod"><option value="daily">Diario</option><option value="weekly" selected>Semanal</option><option value="monthly">Mensual</option><option value="yearly">Anual</option></select>
+      </div>
+    </div>`;return}
+  if(t==='limit'||t==='goal'){
+    typeFields.innerHTML=`<div class="row cols-3">
+      <div><label class="small">Límite/Meta</label><input id="fLimit" type="number" min="1" value="10"></div>
+      <div><label class="small">Tipo de valor</label>
+        <select id="fUnit"><option value="number" selected>Número</option><option value="currency">Moneda</option></select>
+      </div>
+    </div>`;return}
+  typeFields.innerHTML=''
+}
+
+$('#mCreate').onclick=async()=>{
+  const name=mName.value.trim(); if(!name) return alert('Escribe un nombre')
+  const kind=mType.value
+  if(editMode){
+    const t=tasks.find(x=>x.id===selected); if(!t) return
+    t.name=name;t.kind=kind;t.type=kind;t.config=t.config||{}
+    if(kind==='recurrent'){t.config.times=Number($('#fTimes').value||1);t.config.period=$('#fPeriod').value;delete t.config.limit;delete t.config.unit}
+    else if(kind==='limit'||kind==='goal'){t.config.limit=Number($('#fLimit').value||0);t.config.unit=$('#fUnit').value;delete t.config.times;delete t.config.period}
+    else{t.config={}}
+    await saveTask(t);modalNew.style.display='none';renderBoard();return
+  }
+  const t={name,kind,config:{},entries:[],createdAt:new Date().toISOString()}
+  if(kind==='recurrent'){t.config.times=Number($('#fTimes').value||1);t.config.period=$('#fPeriod').value}
+  if(kind==='limit'||kind==='goal'){t.config.limit=Number($('#fLimit').value||0);t.config.unit=$('#fUnit').value}
+  await saveTask(t);modalNew.style.display='none';tasks.push(t);renderBoard()
+}
+
+function openEdit(id){
+  const t=tasks.find(x=>x.id===id); if(!t) return
+  editMode=true; selected=id
+  mName.value=t.name||''
+  mType.value=t.kind||t.type||'recurrent'
+  renderTypeFields()
+  if(t.kind==='recurrent'||t.type==='recurrent'){
+    $('#fTimes').value = t.config?.times ?? 1
+    $('#fPeriod').value = t.config?.period ?? 'weekly'
+  }else if(t.kind==='limit'||t.kind==='goal'||t.type==='limit'||t.type==='goal'){
+    $('#fLimit').value = t.config?.limit ?? 0
+    $('#fUnit').value  = t.config?.unit  ?? 'number'
+  }
+  modalNew.style.display='flex'
+}
+
+// ======= Entrada =======
+const modalEntry=$('#modalEntry'),eTitle=$('#eTitle'),eComment=$('#eComment'),eValueWrap=$('#eValueWrap'),eValue=$('#eValue'),eValueLbl=$('#eValueLbl')
+function openEntry(id){
+  selected=id;const t=tasks.find(x=>x.id===id);const k=t.kind||t.type
+  eTitle.textContent=`Registrar: ${t.name}`;eComment.value=''
+  if(k==='limit'||k==='goal'){eValueWrap.style.display='block';eValue.value='';eValueLbl.textContent=t.config.unit==='currency'?'Monto':'Valor'}else{eValueWrap.style.display='none';eValue.value=''}
+  modalEntry.style.display='flex'
+}
+$('#eCancel').onclick=()=>modalEntry.style.display='none'
+$('#eSave').onclick=async()=>{
+  const t=tasks.find(x=>x.id===selected);const k=t.kind||t.type
+  const entry={date:new Date().toISOString(),text:eComment.value.trim()}
+  if(k==='limit'||k==='goal')entry.amount=Number(eValue.value||0)
+  t.entries=t.entries||[];t.entries.push(entry)
+  await saveTask(t);modalEntry.style.display='none';renderBoard()
+}
+
+// ======= Historial =======
+const modalHist=$('#modalHist'),hTitle=$('#hTitle'),hList=$('#hList')
+function openHistory(id){selected=id;const t=tasks.find(x=>x.id===id);hTitle.textContent=t.name;renderHistory(t);modalHist.style.display='flex'}
+$('#hClose').onclick=()=>modalHist.style.display='none'
+$('#hDelete').onclick=()=>deleteTaskFn(selected)
+$('#hEdit').onclick=()=>openEdit(selected)
+
+function renderHistory(t){
+  hList.innerHTML=''
+  ;(t.entries||[]).slice().reverse().forEach((e,idxRev)=>{
+    const idx=(t.entries.length-1)-idxRev
+    const div=document.createElement('div');div.className='entry'
+    const val=(t.kind==='limit'||t.kind==='goal')&&(e.amount||e.amount===0)?`<br><b>${t.config.unit==='currency'?'$':''}${formatNumber(e.amount)}</b>`:''
+    div.innerHTML=`<div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
+      <div><b>${new Date(e.date).toLocaleString()}</b><br>${(e.text||'').replace(/</g,'&lt;')}${val}</div>
+      <button class="btn danger js-del-entry" data-idx="${idx}">Eliminar</button></div>`
+    hList.append(div)
+  })
+  const ctx=$('#hChart').getContext('2d')
+  if(chart) chart.destroy()
+  const k=t.kind||t.type
+  if(k==='recurrent'){
+    const win=periodWindow(t.config.period||'weekly').start
+    const buckets={};(t.entries||[]).forEach(e=>{const d=new Date(e.date);if(d>=win){const key=d.toISOString().slice(0,10);buckets[key]=(buckets[key]||0)+1}})
+    const labels=Object.keys(buckets).sort();const data=labels.map(key=>buckets[key])
+    chart=new Chart(ctx,{type:'bar',data:{labels,datasets:[{label:'Entradas',data}]},options:{scales:{y:{ticks:{callback:v=>formatNumber(v)}}}}})
+  }else if(k==='limit'||k==='goal'){
+    const total=(t.entries||[]).reduce((a,e)=>a+Number(e.amount||0),0)
+    const limit=Math.max(1,Number(t.config.limit||0))
+    chart=new Chart(ctx,{type:'doughnut',data:{labels:[`Progreso (${formatNumber(total)})`,`Restante (${formatNumber(Math.max(0,limit-total))})`],datasets:[{data:[total,Math.max(0,limit-total)]}]}})
+  }else{
+    const done=(t.entries||[]).length>0?1:0
+    chart=new Chart(ctx,{type:'doughnut',data:{labels:['Hecho','Pendiente'],datasets:[{data:[done,1-done]}]}})
+  }
+}
+
+hList.addEventListener('click',async(e)=>{
+  const btn=e.target.closest('.js-del-entry');if(!btn)return
+  const idx=Number(btn.dataset.idx)
+  const t=tasks.find(x=>x.id===selected);if(!t)return
+  if(!confirm('¿Eliminar esta entrada?'))return
+  t.entries.splice(idx,1)
+  await saveTask(t);renderHistory(t);renderBoard()
+})
+
+// ======= Historial Global =======
+const modalGlobal=$('#modalGlobal'),gType=$('#gType'),gFrom=$('#gFrom'),gTo=$('#gTo'),gList=$('#gList')
+$('#btnGlobal').onclick=()=>{renderGlobal();modalGlobal.style.display='flex'}
+$('#gClose').onclick=()=>modalGlobal.style.display='none'
+function renderGlobal(){
+  gList.innerHTML=''
+  const tf=gType.value
+  const dFrom=gFrom.value?new Date(gFrom.value):null
+  const dTo=gTo.value?new Date(gTo.value+'T23:59:59'):null
+  const all=[];tasks.forEach(t=>(t.entries||[]).forEach((e,idx)=>all.push({t,e,idx})))
+  all.sort((a,b)=>new Date(b.e.date)-new Date(a.e.date))
+  all.forEach(({t,e,idx})=>{
+    if(tf!=='all'&&(t.kind||t.type)!==tf)return
+    const d=new Date(e.date);if(dFrom&&d<dFrom)return;if(dTo&&d>dTo)return
+    const val=((t.kind==='limit'||t.kind==='goal')&&(e.amount||e.amount===0))
+      ?`<b> ${t.config?.unit==='currency'?'$':''}${formatNumber(e.amount)}</b>`:''
+    const row=document.createElement('div');row.className='entry'
+    row.innerHTML=`<b>${t.name}</b> — ${d.toLocaleString()}<br>${(e.text||'').replace(/</g,'&lt;')} ${val}`
+    gList.appendChild(row)
+  })
+}
+
+// cerrar modales
+document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.style.display='none'}))
 </script>
 </body>
 </html>
