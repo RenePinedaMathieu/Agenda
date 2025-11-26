@@ -21,6 +21,7 @@ body{
   background:linear-gradient(135deg,#b3e5fc,#a7f3d0,#dbeafe,#a5f3fc);
   background-size:400% 400%;
   animation:gradientMove 25s ease infinite;
+  -webkit-text-size-adjust:100%;
 }
 @keyframes gradientMove{
   0%{background-position:0% 50%}
@@ -44,10 +45,12 @@ h1{
 .btn{
   background:var(--primary);color:#fff;border:none;border-radius:12px;
   padding:10px 14px;cursor:pointer;font-weight:700;
-  transition:transform .15s ease;white-space:nowrap;
+  transition:transform .15s ease;white-space:nowrap;font-size:0.9rem;
 }
 .btn:hover{transform:translateY(-1px)}
-.btn.gray{background:#94a3b8}.btn.danger{background:var(--danger)}
+.btn.gray{background:#94a3b8}
+.btn.danger{background:var(--danger)}
+.btn-small{padding:6px 10px;font-size:.8rem;border-radius:999px}
 
 /* === Secciones === */
 .section{
@@ -57,7 +60,7 @@ h1{
   border-radius:16px;padding:16px 20px;box-shadow:0 6px 20px rgba(0,0,0,.1)
 }
 .section h2{
-  font-size:1.25rem;margin-bottom:14px;border-bottom:2px solid rgba(0,0,0,.1);
+  font-size:1.25rem;margin-bottom:8px;border-bottom:2px solid rgba(0,0,0,.1);
   padding-bottom:4px;color:#1e3a8a
 }
 .board{
@@ -77,8 +80,8 @@ h1{
 }
 .ball:hover{transform:translateY(-3px) scale(1.05)}
 .ball .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none}
-.ball .frac{font-weight:800;font-size:1.2rem;color:#111827}
-.ball .pct{margin-top:2px;font-weight:700;font-size:1rem;color:#374151;opacity:.9}
+.ball .frac{font-weight:800;font-size:1.1rem;color:#111827}
+.ball .pct{margin-top:2px;font-weight:700;font-size:.95rem;color:#374151;opacity:.9}
 .ball .label{
   position:absolute;bottom:-10px;left:50%;transform:translateX(-50%);
   font-size:1rem;font-weight:700;color:#1e293b;text-align:center;
@@ -88,14 +91,22 @@ h1{
 @keyframes pop{0%{transform:scale(.6);opacity:.3}100%{transform:scale(1);opacity:1}}
 
 /* === Modales === */
-.card{background:var(--card);border-radius:16px;box-shadow:0 6px 18px rgba(99,102,241,.08);padding:16px}
+.card{
+  background:var(--card);border-radius:16px;box-shadow:0 6px 18px rgba(99,102,241,.08);padding:16px
+}
+.card.done{
+  border-left:4px solid var(--ok);background:#ecfdf3;
+}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;padding:16px;z-index:1000}
 .modal.show{display:flex}
 .modal .box{background:#fff;border-radius:14px;box-shadow:0 10px 24px rgba(0,0,0,.15);padding:20px;max-width:640px;width:100%}
 .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 .modal-header h3{margin:0;font-size:1.1rem}
 .modal-body{display:grid;gap:10px}
-input,select,textarea{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:10px;font-size:.95rem}
+input,select,textarea{
+  width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:10px;
+  font-size:16px; /* 16px para evitar zoom en iPhone */
+}
 .row{display:grid;gap:10px}
 .row.cols-2{grid-template-columns:1fr 1fr}
 .row.cols-3{grid-template-columns:1fr 1fr 1fr}
@@ -110,140 +121,150 @@ input,select,textarea{width:100%;padding:10px;border:1px solid #cbd5e1;border-ra
 .entry{background:#eef2ff;border-left:4px solid var(--primary);padding:8px;border-radius:10px}
 .entry span{display:block;font-size:.85rem}
 .badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.75rem;background:#e5e7eb;color:#111827;margin-left:4px}
+h3{margin:0 0 4px 0;font-size:1.05rem}
 </style>
 </head>
 <body>
   <header>
     <h1>Agenda Pelotas</h1>
     <div class="status connecting" id="status">🕓 Cargando datos locales...</div>
-    <div>
-      <button class="btn" id="btnAdd">+ Agregar actividad</button>
-      <button class="btn gray" id="btnGlobal">Historial global</button>
-    </div>
   </header>
 
+  <!-- ========== SECCIÓN 1: PRESUPUESTO FINANCIERO ========== -->
   <section class="section">
-    <h2>Recurrentes</h2>
-    <div class="board" id="boardRecurrentes"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+      <h2>Presupuesto financiero</h2>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn gray" id="btnBudgetConfig">Configurar presupuesto</button>
+        <button class="btn" id="btnAddExpense">Agregar gasto</button>
+        <button class="btn gray" id="btnExpensesHistory">Historial de gastos</button>
+      </div>
+    </div>
+    <p class="small" id="cycleLabel"></p>
+    <div class="board" id="boardBudget"></div>
   </section>
 
+  <!-- ========== SECCIÓN 2: RECORDATORIOS ========== -->
   <section class="section">
-    <h2>One Time</h2>
-    <div class="board" id="boardOneTime"></div>
+    <h2>Recordatorios</h2>
+
+    <!-- Rutinas diarias -->
+    <div class="row cols-2" id="dailyRow" style="margin-bottom:16px">
+      <div class="card" id="morningCard">
+        <h3>Rutina Mañana</h3>
+        <p class="small" id="morningStatusText"></p>
+        <button class="btn" id="btnMorningToggle">Marcar como hecha</button>
+      </div>
+      <div class="card" id="nightCard">
+        <h3>Rutina Noche</h3>
+        <p class="small" id="nightStatusText"></p>
+        <button class="btn" id="btnNightToggle">Marcar como hecha</button>
+      </div>
+    </div>
+
+    <!-- Pendientes puntuales -->
+    <div>
+      <h3 style="margin-bottom:8px;font-size:1.05rem">Pendientes puntuales</h3>
+      <div class="row cols-2" style="align-items:flex-end;margin-bottom:8px">
+        <div>
+          <label>Nuevo pendiente</label>
+          <input type="text" id="todoText" placeholder="Ej: Llamar al banco, enviar correo, etc." />
+        </div>
+        <div>
+          <button class="btn" id="btnAddTodo">Agregar pendiente</button>
+        </div>
+      </div>
+      <div class="list" id="todoList"></div>
+    </div>
   </section>
 
-  <section class="section">
-    <h2>Límites / Metas</h2>
-    <div class="board" id="boardLimit"></div>
-  </section>
-
-  <!-- === Modal Actividad (crear / editar) === -->
-  <div class="modal" id="taskModal">
+  <!-- === Modal Configuración de presupuesto === -->
+  <div class="modal" id="budgetModal">
     <div class="box">
       <div class="modal-header">
-        <h3 id="taskModalTitle">Nueva actividad</h3>
-        <button class="btn gray" id="taskClose">Cerrar</button>
+        <h3>Configurar presupuesto del ciclo</h3>
+        <button class="btn gray" id="budgetClose">Cerrar</button>
       </div>
       <div class="modal-body">
-        <div class="row">
+        <p class="small" id="budgetCycleLabel"></p>
+        <div class="row cols-2">
           <div>
-            <label>Nombre</label>
-            <input type="text" id="taskName" placeholder="Ej: Gym, Estudiar GRE, etc." />
+            <label>Ocio / Deporte</label>
+            <input type="number" id="budget_ocio" min="0" step="1000" placeholder="Monto en CLP" />
+          </div>
+          <div>
+            <label>Oficina</label>
+            <input type="number" id="budget_oficina" min="0" step="1000" placeholder="Monto en CLP" />
           </div>
         </div>
         <div class="row cols-2">
           <div>
-            <label>Tipo</label>
-            <select id="taskKind">
-              <option value="recurrent">Recurrente</option>
-              <option value="one_time">One Time</option>
-              <option value="limit">Límite / Meta</option>
-            </select>
+            <label>Extras</label>
+            <input type="number" id="budget_extras" min="0" step="1000" placeholder="Monto en CLP" />
           </div>
           <div>
-            <label>Meta (número)</label>
-            <input type="number" id="taskGoal" min="0" step="1" placeholder="Ej: 60 (minutos), 10 (veces)..." />
+            <label>Otros</label>
+            <input type="number" id="budget_otros" min="0" step="1000" placeholder="Monto en CLP" />
           </div>
-        </div>
-        <div class="row">
-          <div>
-            <label>Unidad</label>
-            <input type="text" id="taskUnit" placeholder="Ej: min, veces, páginas..." />
-          </div>
-        </div>
-        <div class="row">
-          <small class="small">
-            Recurrente / One Time: el progreso se calcula con lo que registres en el día.<br>
-            Límite / Meta: el progreso es acumulado (suma de todos los registros).
-          </small>
         </div>
         <div class="row" style="margin-top:10px;display:flex;gap:8px;justify-content:flex-end">
-          <button class="btn gray" id="taskDelete" style="display:none">Eliminar</button>
-          <button class="btn" id="taskSave">Guardar</button>
+          <button class="btn" id="budgetSave">Guardar presupuesto</button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- === Modal Registro de actividad (hoy u otra fecha) === -->
-  <div class="modal" id="entryModal">
+  <!-- === Modal Agregar gasto === -->
+  <div class="modal" id="expenseModal">
     <div class="box">
       <div class="modal-header">
-        <h3 id="entryTitle">Registrar progreso</h3>
-        <button class="btn gray" id="entryClose">Cerrar</button>
+        <h3>Agregar gasto</h3>
+        <button class="btn gray" id="expenseClose">Cerrar</button>
       </div>
       <div class="modal-body">
         <div class="row cols-2">
           <div>
             <label>Fecha</label>
-            <input type="date" id="entryDate" />
+            <input type="date" id="expenseDate" />
           </div>
           <div>
-            <label>Cantidad</label>
-            <input type="number" id="entryAmount" step="1" min="0" />
+            <label>Monto</label>
+            <input type="number" id="expenseAmount" min="0" step="1000" />
+          </div>
+        </div>
+        <div class="row cols-2">
+          <div>
+            <label>Categoría</label>
+            <select id="expenseCategory">
+              <option value="ocio">Ocio / Deporte</option>
+              <option value="oficina">Oficina</option>
+              <option value="extras">Extras</option>
+              <option value="otros">Otros</option>
+            </select>
           </div>
         </div>
         <div class="row">
-          <small class="small" id="entryHint"></small>
+          <div>
+            <label>Comentario</label>
+            <textarea id="expenseComment" rows="2" placeholder="Ej: Partido pádel, compra en librería, Uber, etc."></textarea>
+          </div>
         </div>
         <div class="row" style="margin-top:10px;display:flex;gap:8px;justify-content:flex-end">
-          <button class="btn" id="entrySave">Guardar registro</button>
+          <button class="btn" id="expenseSave">Guardar gasto</button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- === Modal Historial por actividad === -->
-  <div class="modal" id="historyModal">
+  <!-- === Modal Historial de gastos === -->
+  <div class="modal" id="expensesModal">
     <div class="box">
       <div class="modal-header">
-        <h3 id="historyTitle">Historial</h3>
-        <button class="btn gray" id="historyClose">Cerrar</button>
+        <h3>Historial de gastos</h3>
+        <button class="btn gray" id="expensesClose">Cerrar</button>
       </div>
       <div class="modal-body">
-        <div class="row">
-          <div class="card">
-            <canvas id="historyChart" height="160"></canvas>
-          </div>
-        </div>
-        <div class="row">
-          <div class="list" id="historyList"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- === Modal Historial Global === -->
-  <div class="modal" id="globalModal">
-    <div class="box">
-      <div class="modal-header">
-        <h3>Historial global</h3>
-        <button class="btn gray" id="globalClose">Cerrar</button>
-      </div>
-      <div class="modal-body">
-        <div class="row">
-          <div class="list" id="globalList"></div>
-        </div>
+        <div class="list" id="expensesList"></div>
       </div>
     </div>
   </div>
@@ -253,13 +274,19 @@ input,select,textarea{width:100%;padding:10px;border:1px solid #cbd5e1;border-ra
 const STORAGE_KEY = 'agendaPelotas_state_v1';
 const $ = (sel) => document.querySelector(sel);
 
+const BUDGET_CATEGORIES = [
+  { key: 'ocio', label: 'Ocio / Deporte' },
+  { key: 'oficina', label: 'Oficina' },
+  { key: 'extras', label: 'Extras' },
+  { key: 'otros', label: 'Otros' }
+];
+
 let state = {
-  tasks: [],
-  entries: [] // {id, taskId, date: 'YYYY-MM-DD', amount: number}
+  budgets: {},  // cycleKey -> { ocio, oficina, extras, otros }
+  expenses: [], // {id, date, category, amount, comment}
+  daily: { morningDoneOn: null, nightDoneOn: null },
+  todos: []     // {id, text, done}
 };
-let tasks = []; // alias para comodidad
-let currentTaskId = null;
-let historyChart = null;
 
 /* ==================== UTILIDADES ==================== */
 function todayStr() {
@@ -271,63 +298,84 @@ function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
-      state = JSON.parse(raw);
-      state.tasks ??= [];
-      state.entries ??= [];
+      const parsed = JSON.parse(raw);
+      state.budgets = parsed.budgets || {};
+      state.expenses = parsed.expenses || [];
+      state.daily = parsed.daily || { morningDoneOn: null, nightDoneOn: null };
+      state.todos = parsed.todos || [];
     }
   } catch (e) {
     console.error('Error leyendo localStorage', e);
-    state = { tasks: [], entries: [] };
+    state = {
+      budgets: {},
+      expenses: [],
+      daily: { morningDoneOn: null, nightDoneOn: null },
+      todos: []
+    };
   }
-  tasks = state.tasks;
 }
 
 function saveState() {
-  state.tasks = tasks;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
-/* ==================== PROGRESO ==================== */
-function getEntriesForTask(taskId) {
-  return state.entries.filter(e => e.taskId === taskId);
-}
-
-function progressNumbers(task) {
-  const all = getEntriesForTask(task.id);
-  const goal = Number(task.goal) || 0;
-  if (goal <= 0) return { used: 0, goal: 0 };
-
-  let used = 0;
-  if (task.kind === 'limit') {
-    // Meta acumulada
-    used = all.reduce((s,e) => s + Number(e.amount || 0), 0);
-  } else {
-    // Recurrente / One Time: solo día seleccionado = hoy
-    const today = todayStr();
-    used = all
-      .filter(e => e.date === today)
-      .reduce((s,e) => s + Number(e.amount || 0), 0);
+function cycleKeyFromDate(dateStr) {
+  const [y,m,d] = dateStr.split('-').map(Number);
+  let year = y;
+  let month = m;
+  if (d < 19) {
+    month -= 1;
+    if (month === 0) { month = 12; year -= 1; }
   }
-  return { used, goal };
+  return `${year}-${String(month).padStart(2,'0')}`;
 }
 
-function computeProgress(task) {
-  const { used, goal } = progressNumbers(task);
-  if (!goal) return 0;
-  return Math.max(0, Math.min(1, used / goal));
+function getCurrentCycleKey() {
+  return cycleKeyFromDate(todayStr());
 }
 
-function fractionForTask(task) {
-  const { used, goal } = progressNumbers(task);
-  if (!goal) return { fracText: `${used.toFixed(0)}` };
-  return { fracText: `${used.toFixed(0)}/${goal.toFixed(0)}` };
+function getCycleBounds(cycleKey) {
+  const [year, month] = cycleKey.split('-').map(Number);
+  const startDate = new Date(year, month - 1, 19);
+  let endYear = year;
+  let endMonth = month === 12 ? 1 : month + 1;
+  if (month === 12) endYear = year + 1;
+  const endDate = new Date(endYear, endMonth - 1, 18);
+  return { startDate, endDate };
+}
+
+function formatDate(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${day}-${m}-${y}`;
+}
+
+function getBudgetForCycle(cycleKey) {
+  const base = state.budgets[cycleKey] || {};
+  const res = {};
+  BUDGET_CATEGORIES.forEach(cat => {
+    res[cat.key] = Number(base[cat.key] || 0);
+  });
+  return res;
+}
+
+function getSpentForCycle(cycleKey) {
+  const sums = {};
+  BUDGET_CATEGORIES.forEach(cat => sums[cat.key] = 0);
+  state.expenses.forEach(e => {
+    const key = cycleKeyFromDate(e.date);
+    if (key === cycleKey && sums.hasOwnProperty(e.category)) {
+      sums[e.category] += Number(e.amount || 0);
+    }
+  });
+  return sums;
 }
 
 function colorForProgress(p) {
-  if (p >= 1) return '#10b981';         // verde
-  if (p >= 0.67) return '#3b82f6';      // azul
-  if (p >= 0.34) return '#facc15';      // amarillo
-  return '#ef4444';                     // rojo
+  if (p >= 0.8) return '#f97316';  // naranjo
+  if (p >= 0.5) return '#facc15';  // amarillo
+  return '#10b981';                // verde
 }
 
 /* ==================== MODALES ==================== */
@@ -338,295 +386,306 @@ function closeModal(el) {
   el.classList.remove('show');
 }
 
-/* ==================== RENDER DEL TABLERO ==================== */
-function renderBoard() {
-  const r = $("#boardRecurrentes"),
-        o = $("#boardOneTime"),
-        l = $("#boardLimit");
-  r.innerHTML = o.innerHTML = l.innerHTML = '';
+/* ==================== PRESUPUESTO: RENDER ==================== */
+function renderBudget() {
+  const board = $('#boardBudget');
+  const cycleLabel = $('#cycleLabel');
+  const cycleKey = getCurrentCycleKey();
+  const { startDate, endDate } = getCycleBounds(cycleKey);
+  const budget = getBudgetForCycle(cycleKey);
+  const spent = getSpentForCycle(cycleKey);
 
-  tasks.forEach(t => {
-    const p = computeProgress(t);
-    const { fracText } = fractionForTask(t);
+  cycleLabel.textContent = `Ciclo actual: ${formatDate(startDate)} al ${formatDate(endDate)} (se reinicia el 19 de cada mes)`;
+
+  board.innerHTML = '';
+  BUDGET_CATEGORIES.forEach(cat => {
+    const b = budget[cat.key];
+    const s = spent[cat.key];
+    const ratio = b > 0 ? s / b : 0;
+    const p = Math.max(0, Math.min(1, ratio));
     const ball = document.createElement('div');
     ball.className = 'ball appear';
     ball.style.setProperty('--p', (p*100).toFixed(2)+'%');
-    ball.style.setProperty('--col', colorForProgress(p));
-    ball.title = t.name;
+    const color = ratio > 1 ? '#ef4444' : colorForProgress(p);
+    ball.style.setProperty('--col', color);
+    ball.title = cat.label;
+
+    const spentStr = Number(s || 0).toLocaleString('es-CL', { maximumFractionDigits: 0 });
+    const budgetStr = b ? Number(b).toLocaleString('es-CL', { maximumFractionDigits: 0 }) : '-';
+    const pct = b ? Math.round(p*100) : 0;
+
     ball.innerHTML = `
       <div class="center">
-        <div class="frac">${fracText}</div>
-        <div class="pct">${Math.round(p*100)}%</div>
+        <div class="frac">${spentStr}/${budgetStr}</div>
+        <div class="pct">${pct}%</div>
       </div>
-      <div class="label"><b>${t.name}</b></div>
+      <div class="label"><b>${cat.label}</b></div>
     `;
 
-    // Click → registrar
-    ball.addEventListener('click', () => openEntry(t.id));
+    // Click → agregar gasto preseleccionando categoría
+    ball.addEventListener('click', () => openExpenseModal(cat.key));
 
-    // Click derecho / long press → historial
+    // Long press / click derecho → historial filtrado por categoría
     ball.addEventListener('contextmenu', e => {
       e.preventDefault();
-      openHistory(t.id);
+      openExpensesHistory(cat.key);
     });
     let touchTimer;
     ball.addEventListener('touchstart', () => {
-      touchTimer = setTimeout(() => openHistory(t.id), 600);
+      touchTimer = setTimeout(() => openExpensesHistory(cat.key), 600);
     });
     ball.addEventListener('touchend', () => clearTimeout(touchTimer));
 
-    const type = t.kind || t.type;
-    if (type === 'recurrent')      r.appendChild(ball);
-    else if (type === 'one_time')  o.appendChild(ball);
-    else                           l.appendChild(ball);
+    board.appendChild(ball);
   });
 }
 
-/* ==================== ACTIVIDADES ==================== */
-function openTaskModal(taskId = null) {
-  currentTaskId = taskId;
-  const modal = $('#taskModal');
-  const title = $('#taskModalTitle');
-  const btnDelete = $('#taskDelete');
-  const nameInput = $('#taskName');
-  const kindSelect = $('#taskKind');
-  const goalInput = $('#taskGoal');
-  const unitInput = $('#taskUnit');
+/* ==================== PRESUPUESTO: CONFIG ==================== */
+function openBudgetConfig() {
+  const modal = $('#budgetModal');
+  const cycleKey = getCurrentCycleKey();
+  const { startDate, endDate } = getCycleBounds(cycleKey);
+  $('#budgetCycleLabel').textContent =
+    `Ciclo actual: ${formatDate(startDate)} al ${formatDate(endDate)} (se guarda solo para este ciclo)`;
 
-  if (taskId) {
-    const t = tasks.find(x => x.id === taskId);
-    if (!t) return;
-    title.textContent = 'Editar actividad';
-    nameInput.value = t.name || '';
-    kindSelect.value = t.kind || 'recurrent';
-    goalInput.value = t.goal ?? '';
-    unitInput.value = t.unit || '';
-    btnDelete.style.display = 'inline-block';
-  } else {
-    title.textContent = 'Nueva actividad';
-    nameInput.value = '';
-    kindSelect.value = 'recurrent';
-    goalInput.value = '';
-    unitInput.value = '';
-    btnDelete.style.display = 'none';
-  }
+  const current = getBudgetForCycle(cycleKey);
+  BUDGET_CATEGORIES.forEach(cat => {
+    $('#budget_'+cat.key).value = current[cat.key] || '';
+  });
 
   openModal(modal);
 }
 
-function saveTaskFromModal() {
-  const name = $('#taskName').value.trim();
-  const kind = $('#taskKind').value;
-  const goal = Number($('#taskGoal').value || 0);
-  const unit = $('#taskUnit').value.trim();
-
-  if (!name) {
-    alert('Ponle un nombre a la actividad');
-    return;
-  }
-
-  if (currentTaskId) {
-    const idx = tasks.findIndex(t => t.id === currentTaskId);
-    if (idx !== -1) {
-      tasks[idx] = { ...tasks[idx], name, kind, goal, unit };
-    }
-  } else {
-    const id = crypto.randomUUID();
-    tasks.push({ id, name, kind, goal, unit });
-  }
-
+function saveBudgetFromModal() {
+  const cycleKey = getCurrentCycleKey();
+  const obj = {};
+  BUDGET_CATEGORIES.forEach(cat => {
+    obj[cat.key] = Number($('#budget_'+cat.key).value || 0);
+  });
+  state.budgets[cycleKey] = obj;
   saveState();
-  renderBoard();
-  closeModal($('#taskModal'));
+  renderBudget();
+  closeModal($('#budgetModal'));
 }
 
-function deleteCurrentTask() {
-  if (!currentTaskId) return;
-  if (!confirm('¿Eliminar esta actividad y sus registros?')) return;
-  tasks = tasks.filter(t => t.id !== currentTaskId);
-  state.entries = state.entries.filter(e => e.taskId !== currentTaskId);
-  currentTaskId = null;
-  saveState();
-  renderBoard();
-  closeModal($('#taskModal'));
-}
-
-/* ==================== REGISTRO DE PROGRESO ==================== */
-function openEntry(taskId) {
-  currentTaskId = taskId;
-  const task = tasks.find(t => t.id === taskId);
-  if (!task) return;
-  const modal = $('#entryModal');
-
-  $('#entryTitle').textContent = `Registrar: ${task.name}`;
-  $('#entryDate').value = todayStr();
-  $('#entryAmount').value = '';
-
-  const { used, goal } = progressNumbers(task);
-  const unit = task.unit || '';
-  let hint = '';
-  if (goal > 0) {
-    if (task.kind === 'limit') {
-      hint = `Meta acumulada: ${used.toFixed(0)} / ${goal.toFixed(0)} ${unit}`;
-    } else {
-      hint = `Meta diaria: ${used.toFixed(0)} / ${goal.toFixed(0)} ${unit} (hoy)`;
-    }
-  } else {
-    hint = `Sin meta numérica definida.`;
-  }
-  $('#entryHint').textContent = hint;
-
+/* ==================== GASTOS ==================== */
+function openExpenseModal(categoryKey = 'ocio') {
+  const modal = $('#expenseModal');
+  $('#expenseDate').value = todayStr();
+  $('#expenseAmount').value = '';
+  $('#expenseCategory').value = categoryKey;
+  $('#expenseComment').value = '';
   openModal(modal);
 }
 
-function saveEntryFromModal() {
-  if (!currentTaskId) return;
-  const task = tasks.find(t => t.id === currentTaskId);
-  if (!task) return;
+function saveExpenseFromModal() {
+  const date = $('#expenseDate').value || todayStr();
+  const amount = Number($('#expenseAmount').value || 0);
+  const category = $('#expenseCategory').value;
+  const comment = $('#expenseComment').value.trim();
 
-  const date = $('#entryDate').value || todayStr();
-  const amount = Number($('#entryAmount').value || 0);
-  if (!amount) {
-    alert('Ingresa una cantidad mayor a 0');
+  if (!amount || amount <= 0) {
+    alert('Ingresa un monto mayor a 0');
     return;
   }
 
-  state.entries.push({
+  state.expenses.push({
     id: crypto.randomUUID(),
-    taskId: task.id,
     date,
-    amount
+    amount,
+    category,
+    comment
   });
 
   saveState();
-  renderBoard();
-  closeModal($('#entryModal'));
+  renderBudget();
+  closeModal($('#expenseModal'));
 }
 
-/* ==================== HISTORIAL POR ACTIVIDAD ==================== */
-function openHistory(taskId) {
-  const task = tasks.find(t => t.id === taskId);
-  if (!task) return;
-  const modal = $('#historyModal');
-  $('#historyTitle').textContent = `Historial: ${task.name}`;
-
-  const entries = getEntriesForTask(taskId)
-    .slice()
-    .sort((a,b) => a.date.localeCompare(b.date));
-
-  const list = $('#historyList');
+function openExpensesHistory(filterCategory = null) {
+  const list = $('#expensesList');
   list.innerHTML = '';
-  if (entries.length === 0) {
+
+  let items = state.expenses.slice();
+  if (filterCategory) {
+    items = items.filter(e => e.category === filterCategory);
+  }
+  items.sort((a,b) => b.date.localeCompare(a.date));
+
+  if (!items.length) {
     const div = document.createElement('div');
     div.className = 'entry';
-    div.innerHTML = '<span>No hay registros aún.</span>';
+    div.innerHTML = '<span>No hay gastos registrados.</span>';
     list.appendChild(div);
   } else {
-    entries.forEach(e => {
+    items.forEach(e => {
+      const cycleKey = cycleKeyFromDate(e.date);
+      const cat = BUDGET_CATEGORIES.find(c => c.key === e.category);
+      const label = cat ? cat.label : e.category;
+      const amountStr = Number(e.amount || 0).toLocaleString('es-CL', { maximumFractionDigits: 0 });
+      const comment = e.comment ? ` — ${e.comment}` : '';
       const div = document.createElement('div');
       div.className = 'entry';
       div.innerHTML = `
-        <span><b>${e.date}</b> — +${e.amount} ${task.unit || ''}</span>
+        <span><b>${e.date}</b> — ${label}</span>
+        <span>${amountStr}${comment} <span class="badge">${cycleKey}</span></span>
       `;
       list.appendChild(div);
     });
   }
 
-  // Chart
-  const ctx = document.getElementById('historyChart').getContext('2d');
-  if (historyChart) {
-    historyChart.destroy();
+  openModal($('#expensesModal'));
+}
+
+/* ==================== RECORDATORIOS: RUTINAS ==================== */
+function renderDaily() {
+  if (!state.daily) state.daily = { morningDoneOn: null, nightDoneOn: null };
+  const today = todayStr();
+  const morningDone = state.daily.morningDoneOn === today;
+  const nightDone = state.daily.nightDoneOn === today;
+
+  const morningCard = $('#morningCard');
+  const nightCard = $('#nightCard');
+  const morningStatus = $('#morningStatusText');
+  const nightStatus = $('#nightStatusText');
+  const morningBtn = $('#btnMorningToggle');
+  const nightBtn = $('#btnNightToggle');
+
+  if (morningDone) {
+    morningCard.classList.add('done');
+    morningStatus.textContent = 'Completada hoy';
+    morningBtn.textContent = 'Desmarcar';
+  } else {
+    morningCard.classList.remove('done');
+    morningStatus.textContent = 'Pendiente hoy';
+    morningBtn.textContent = 'Marcar como hecha';
   }
-  historyChart = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: entries.map(e => e.date),
-      datasets: [{
-        label: task.unit ? `Cantidad (${task.unit})` : 'Cantidad',
-        data: entries.map(e => e.amount),
-        tension: 0.3
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: { display: false }
-      },
-      scales: {
-        x: { display: true },
-        y: { display: true, beginAtZero: true }
-      }
-    }
+
+  if (nightDone) {
+    nightCard.classList.add('done');
+    nightStatus.textContent = 'Completada hoy';
+    nightBtn.textContent = 'Desmarcar';
+  } else {
+    nightCard.classList.remove('done');
+    nightStatus.textContent = 'Pendiente hoy';
+    nightBtn.textContent = 'Marcar como hecha';
+  }
+}
+
+function toggleRoutine(which) {
+  const today = todayStr();
+  if (!state.daily) state.daily = { morningDoneOn: null, nightDoneOn: null };
+  if (which === 'morning') {
+    state.daily.morningDoneOn = (state.daily.morningDoneOn === today) ? null : today;
+  } else {
+    state.daily.nightDoneOn = (state.daily.nightDoneOn === today) ? null : today;
+  }
+  saveState();
+  renderDaily();
+}
+
+/* ==================== RECORDATORIOS: PENDIENTES ==================== */
+function renderTodos() {
+  const list = $('#todoList');
+  const todos = state.todos || [];
+  list.innerHTML = '';
+
+  if (!todos.length) {
+    const div = document.createElement('div');
+    div.className = 'entry';
+    div.innerHTML = '<span>No hay pendientes.</span>';
+    list.appendChild(div);
+    return;
+  }
+
+  todos.forEach(todo => {
+    const div = document.createElement('div');
+    div.className = 'entry';
+    const checkedAttr = todo.done ? 'checked' : '';
+    const textStyle = todo.done ? 'style="text-decoration:line-through;opacity:.7"' : '';
+    div.innerHTML = `
+      <span>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+          <input type="checkbox" data-id="${todo.id}" ${checkedAttr} />
+          <span ${textStyle}>${todo.text}</span>
+        </label>
+      </span>
+      <span>
+        <button class="btn gray btn-small" data-delete="${todo.id}">Eliminar</button>
+      </span>
+    `;
+    list.appendChild(div);
   });
 
-  openModal(modal);
+  list.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      toggleTodo(cb.dataset.id, cb.checked);
+    });
+  });
+  list.querySelectorAll('button[data-delete]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      deleteTodo(btn.dataset.delete);
+    });
+  });
 }
 
-/* ==================== HISTORIAL GLOBAL ==================== */
-function openGlobalHistory() {
-  const list = $('#globalList');
-  list.innerHTML = '';
+function addTodo() {
+  const textEl = $('#todoText');
+  const text = textEl.value.trim();
+  if (!text) return;
+  if (!state.todos) state.todos = [];
+  state.todos.push({ id: crypto.randomUUID(), text, done: false });
+  textEl.value = '';
+  saveState();
+  renderTodos();
+}
 
-  const entries = state.entries
-    .slice()
-    .sort((a,b) => b.date.localeCompare(a.date)) // más recientes primero
-    .slice(0, 100); // límite por si acaso
+function toggleTodo(id, done) {
+  const todo = (state.todos || []).find(t => t.id === id);
+  if (!todo) return;
+  todo.done = done;
+  saveState();
+  renderTodos();
+}
 
-  if (entries.length === 0) {
-    const div = document.createElement('div');
-    div.className = 'entry';
-    div.innerHTML = '<span>No hay registros todavía.</span>';
-    list.appendChild(div);
-  } else {
-    entries.forEach(e => {
-      const task = tasks.find(t => t.id === e.taskId);
-      const name = task ? task.name : 'Actividad desconocida';
-      const unit = task?.unit || '';
-      const kind = task?.kind || '';
-      const div = document.createElement('div');
-      div.className = 'entry';
-      div.innerHTML = `
-        <span><b>${e.date}</b> — ${name}</span>
-        <span>+${e.amount} ${unit} <span class="badge">${kind}</span></span>
-      `;
-      list.appendChild(div);
-    });
-  }
-
-  openModal($('#globalModal'));
+function deleteTodo(id) {
+  state.todos = (state.todos || []).filter(t => t.id !== id);
+  saveState();
+  renderTodos();
 }
 
 /* ==================== INICIALIZACIÓN ==================== */
 document.addEventListener('DOMContentLoaded', () => {
-  // Estado
   loadState();
-  renderBoard();
+  renderBudget();
+  renderDaily();
+  renderTodos();
 
   const status = $('#status');
   status.classList.remove('connecting');
   status.classList.add('connected');
   status.textContent = '💾 Datos guardados en este dispositivo';
 
-  // Botones header
-  $('#btnAdd').addEventListener('click', () => openTaskModal(null));
-  $('#btnGlobal').addEventListener('click', openGlobalHistory);
+  // Presupuesto
+  $('#btnBudgetConfig').addEventListener('click', openBudgetConfig);
+  $('#btnAddExpense').addEventListener('click', () => openExpenseModal());
+  $('#btnExpensesHistory').addEventListener('click', () => openExpensesHistory());
 
-  // Modal actividad
-  $('#taskClose').addEventListener('click', () => closeModal($('#taskModal')));
-  $('#taskSave').addEventListener('click', saveTaskFromModal);
-  $('#taskDelete').addEventListener('click', deleteCurrentTask);
+  $('#budgetClose').addEventListener('click', () => closeModal($('#budgetModal')));
+  $('#budgetSave').addEventListener('click', saveBudgetFromModal);
 
-  // Modal registro
-  $('#entryClose').addEventListener('click', () => closeModal($('#entryModal')));
-  $('#entrySave').addEventListener('click', saveEntryFromModal);
+  $('#expenseClose').addEventListener('click', () => closeModal($('#expenseModal')));
+  $('#expenseSave').addEventListener('click', saveExpenseFromModal);
 
-  // Modal historial
-  $('#historyClose').addEventListener('click', () => closeModal($('#historyModal')));
+  $('#expensesClose').addEventListener('click', () => closeModal($('#expensesModal')));
 
-  // Modal global
-  $('#globalClose').addEventListener('click', () => closeModal($('#globalModal')));
+  // Rutinas
+  $('#btnMorningToggle').addEventListener('click', () => toggleRoutine('morning'));
+  $('#btnNightToggle').addEventListener('click', () => toggleRoutine('night'));
+
+  // Pendientes
+  $('#btnAddTodo').addEventListener('click', addTodo);
 });
 </script>
 </body>
 </html>
-
