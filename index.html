@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
 <title>Agenda Pelotas</title>
 <link rel="preconnect" href="https://www.gstatic.com"/>
-<!-- Iconos -->
 <link rel="icon" type="image/png" sizes="32x32" href="favicon.png" />
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
 <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png" />
@@ -83,16 +82,31 @@ h1{
   background:conic-gradient(var(--col) var(--p), #e5e7eb 0);
 }
 .ball:hover{transform:translateY(-3px) scale(1.05)}
-.ball .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none}
-.ball .frac{font-weight:800;font-size:1.1rem;color:#111827}
-.ball .pct{margin-top:2px;font-weight:700;font-size:.95rem;color:#374151;opacity:.9}
+.ball .center{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  pointer-events:none;
+  padding:0 10px;
+  text-align:center;
+}
+.ball .frac{
+  font-weight:800;font-size:1.05rem;color:#111827;
+  word-break:break-word;
+  max-width:130px;
+}
+.ball .pct{margin-top:2px;font-weight:700;font-size:.9rem;color:#374151;opacity:.9}
 .ball .label{
   position:absolute;bottom:-10px;left:50%;transform:translateX(-50%);
-  font-size:1rem;font-weight:700;color:#1e293b;text-align:center;
+  font-size:.95rem;font-weight:700;color:#1e293b;text-align:center;
   white-space:nowrap;max-width:160px;text-overflow:ellipsis;overflow:hidden
 }
 .ball.appear{animation:pop .25s ease}
 @keyframes pop{0%{transform:scale(.6);opacity:.3}100%{transform:scale(1);opacity:1}}
+
+/* Pelotas específicas para TODO (texto más pequeño) */
+.ball-todo .frac{
+  font-size:.9rem;
+}
 
 /* === Modales y tarjetas === */
 .card{
@@ -118,11 +132,9 @@ input,select,textarea{
   .row.cols-2,.row.cols-3{grid-template-columns:1fr}
   .board{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:18px}
   .ball{width:140px;height:140px}
-  .ball .label{font-size:.95rem}
+  .ball .label{font-size:.9rem}
 }
 .small{font-size:.9rem;color:var(--muted)}
-
-/* list se usa en varias partes, la dejamos flex en columna */
 .list{
   display:flex;
   flex-direction:column;
@@ -131,50 +143,15 @@ input,select,textarea{
   overflow:auto;
   margin-top:8px;
 }
-
-/* Para historial de gastos sigue usando .entry */
-.entry{
-  background:#eef2ff;border-left:4px solid var(--primary);
-  padding:8px;border-radius:10px;
-}
+.entry{background:#eef2ff;border-left:4px solid var(--primary);padding:8px;border-radius:10px}
 .entry span{display:block;font-size:.85rem}
 .badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.75rem;background:#e5e7eb;color:#111827;margin-left:4px}
 h3{margin:0 0 4px 0;font-size:1.05rem}
-
-/* === Pendientes puntuales === */
-.todo-item{
-  display:flex;
-  align-items:flex-start;
-  gap:8px;
-  background:#f9fafb;
-  border-radius:10px;
-  padding:8px 10px;
-  color:#0f172a;
-  font-size:.9rem;
-  width:100%;
-}
-.todo-label{
-  display:flex;
-  align-items:flex-start;
-  gap:8px;
-  cursor:pointer;
-  flex:1;          /* ocupa todo el espacio entre checkbox y botón */
-  min-width:0;     /* permite que el texto se ajuste y haga wrap */
-}
-.todo-label input[type="checkbox"]{
-  margin-top:2px;
-}
-.todo-text{
-  flex:1;
-  word-break:break-word;
-}
-.todo-item.done .todo-text{
-  text-decoration:line-through;
-  opacity:.6;
-}
 .todo-empty{
   color:var(--muted);
   font-size:.85rem;
+  text-align:center;
+  width:100%;
 }
 </style>
 </head>
@@ -228,7 +205,8 @@ h3{margin:0 0 4px 0;font-size:1.05rem}
           <button class="btn" id="btnAddTodo">Agregar pendiente</button>
         </div>
       </div>
-      <div class="list" id="todoList"></div>
+      <!-- AQUÍ USAMOS DIRECTO UN TABLERO DE PELOTAS -->
+      <div class="board" id="todoBoard"></div>
     </div>
   </section>
 
@@ -638,30 +616,25 @@ function toggleRoutine(which) {
 
 /* ==================== RECORDATORIOS: PENDIENTES ==================== */
 function renderTodos() {
-  const list = $('#todoList');
+  const board = $('#todoBoard');
   const todos = state.todos || [];
-
-  // Usamos el mismo layout que el tablero de presupuesto
-  list.className = 'board';
-  list.innerHTML = '';
+  board.innerHTML = '';
 
   if (!todos.length) {
-    const msg = document.createElement('p');
-    msg.className = 'small';
+    const msg = document.createElement('div');
+    msg.className = 'todo-empty';
     msg.textContent = 'No hay pendientes.';
-    // Para que el texto no quede pegado a un lado
+    // centrado ocupando todo el ancho del tablero
     msg.style.gridColumn = '1 / -1';
-    msg.style.textAlign = 'center';
-    list.appendChild(msg);
+    board.appendChild(msg);
     return;
   }
 
   todos.forEach(todo => {
-    const ball = document.createElement('div');
-    ball.className = 'ball appear';
-
-    // Si está hecho, pelota verde llena; si no, gris vacía
     const done = !!todo.done;
+    const ball = document.createElement('div');
+    ball.className = 'ball appear ball-todo';
+
     ball.style.setProperty('--p', done ? '100%' : '0%');
     ball.style.setProperty('--col', done ? '#10b981' : '#e5e7eb');
 
@@ -677,19 +650,18 @@ function renderTodos() {
       <div class="label"><b>Pendiente</b></div>
     `;
 
-    // Click: alternar hecho / no hecho
+    // click => alternar hecho / no hecho
     ball.addEventListener('click', () => {
       toggleTodo(todo.id, !done);
     });
 
-    // Click derecho o long-press: eliminar
+    // long press / click derecho => eliminar
     ball.addEventListener('contextmenu', e => {
       e.preventDefault();
       if (confirm('¿Eliminar este pendiente?')) {
         deleteTodo(todo.id);
       }
     });
-
     let touchTimer;
     ball.addEventListener('touchstart', () => {
       touchTimer = setTimeout(() => {
@@ -700,7 +672,7 @@ function renderTodos() {
     });
     ball.addEventListener('touchend', () => clearTimeout(touchTimer));
 
-    list.appendChild(ball);
+    board.appendChild(ball);
   });
 }
 
@@ -764,4 +736,3 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 </body>
 </html>
-
