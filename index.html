@@ -2,9 +2,12 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Agenda(Local)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Agenda</title>
 <link rel="preconnect" href="https://www.gstatic.com"/>
+<!-- Icono para navegador y home screen -->
+<link rel="icon" type="image/png" href="favicon.png" />
+<link rel="apple-touch-icon" href="icon-192.png" />
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
 :root{
@@ -90,7 +93,7 @@ h1{
 .ball.appear{animation:pop .25s ease}
 @keyframes pop{0%{transform:scale(.6);opacity:.3}100%{transform:scale(1);opacity:1}}
 
-/* === Modales === */
+/* === Modales y tarjetas === */
 .card{
   background:var(--card);border-radius:16px;box-shadow:0 6px 18px rgba(99,102,241,.08);padding:16px
 }
@@ -122,6 +125,40 @@ input,select,textarea{
 .entry span{display:block;font-size:.85rem}
 .badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.75rem;background:#e5e7eb;color:#111827;margin-left:4px}
 h3{margin:0 0 4px 0;font-size:1.05rem}
+
+/* === Pendientes puntuales === */
+.todo-item{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  background:#f9fafb;
+  border-radius:10px;
+  padding:8px 10px;
+  color:#0f172a;
+  font-size:.9rem;
+}
+.todo-label{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  cursor:pointer;
+  flex:1;
+}
+.todo-text{
+  flex:1;
+  word-break:break-word;
+}
+.todo-item.done .todo-text{
+  text-decoration:line-through;
+  opacity:.6;
+}
+.todo-empty{
+  background:transparent;
+  border-left:none;
+  color:var(--muted);
+  font-size:.85rem;
+}
 </style>
 </head>
 <body>
@@ -592,28 +629,24 @@ function renderTodos() {
 
   if (!todos.length) {
     const div = document.createElement('div');
-    div.className = 'entry';
-    div.innerHTML = '<span>No hay pendientes.</span>';
+    div.className = 'todo-empty';
+    div.textContent = 'No hay pendientes.';
     list.appendChild(div);
     return;
   }
 
   todos.forEach(todo => {
     const div = document.createElement('div');
-    div.className = 'entry';
-    const checkedAttr = todo.done ? 'checked' : '';
-    const textStyle = todo.done ? 'style="text-decoration:line-through;opacity:.7"' : '';
+    div.className = 'todo-item' + (todo.done ? ' done' : '');
+
     div.innerHTML = `
-      <span>
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-          <input type="checkbox" data-id="${todo.id}" ${checkedAttr} />
-          <span ${textStyle}>${todo.text}</span>
-        </label>
-      </span>
-      <span>
-        <button class="btn gray btn-small" data-delete="${todo.id}">Eliminar</button>
-      </span>
+      <label class="todo-label">
+        <input type="checkbox" data-id="${todo.id}" ${todo.done ? 'checked' : ''} />
+        <span class="todo-text">${todo.text}</span>
+      </label>
+      <button class="btn gray btn-small" data-delete="${todo.id}">Eliminar</button>
     `;
+
     list.appendChild(div);
   });
 
@@ -622,6 +655,7 @@ function renderTodos() {
       toggleTodo(cb.dataset.id, cb.checked);
     });
   });
+
   list.querySelectorAll('button[data-delete]').forEach(btn => {
     btn.addEventListener('click', () => {
       deleteTodo(btn.dataset.delete);
