@@ -640,41 +640,67 @@ function toggleRoutine(which) {
 function renderTodos() {
   const list = $('#todoList');
   const todos = state.todos || [];
+
+  // Usamos el mismo layout que el tablero de presupuesto
+  list.className = 'board';
   list.innerHTML = '';
 
   if (!todos.length) {
-    const div = document.createElement('div');
-    div.className = 'todo-empty';
-    div.textContent = 'No hay pendientes.';
-    list.appendChild(div);
+    const msg = document.createElement('p');
+    msg.className = 'small';
+    msg.textContent = 'No hay pendientes.';
+    // Para que el texto no quede pegado a un lado
+    msg.style.gridColumn = '1 / -1';
+    msg.style.textAlign = 'center';
+    list.appendChild(msg);
     return;
   }
 
   todos.forEach(todo => {
-    const div = document.createElement('div');
-    div.className = 'todo-item' + (todo.done ? ' done' : '');
+    const ball = document.createElement('div');
+    ball.className = 'ball appear';
 
-    div.innerHTML = `
-      <label class="todo-label">
-        <input type="checkbox" data-id="${todo.id}" ${todo.done ? 'checked' : ''} />
-        <span class="todo-text">${todo.text}</span>
-      </label>
-      <button class="btn gray btn-small todo-delete" data-id="${todo.id}">Eliminar</button>
+    // Si está hecho, pelota verde llena; si no, gris vacía
+    const done = !!todo.done;
+    ball.style.setProperty('--p', done ? '100%' : '0%');
+    ball.style.setProperty('--col', done ? '#10b981' : '#e5e7eb');
+
+    const textStyle = done ? 'text-decoration:line-through; opacity:.7;' : '';
+
+    ball.innerHTML = `
+      <div class="center">
+        <div class="frac" style="${textStyle}">
+          ${todo.text}
+        </div>
+        <div class="pct">${done ? 'Hecho' : 'Pendiente'}</div>
+      </div>
+      <div class="label"><b>Pendiente</b></div>
     `;
 
-    list.appendChild(div);
-  });
-
-  list.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-    cb.addEventListener('change', () => {
-      toggleTodo(cb.dataset.id, cb.checked);
+    // Click: alternar hecho / no hecho
+    ball.addEventListener('click', () => {
+      toggleTodo(todo.id, !done);
     });
-  });
 
-  list.querySelectorAll('.todo-delete').forEach(btn => {
-    btn.addEventListener('click', () => {
-      deleteTodo(btn.dataset.id);
+    // Click derecho o long-press: eliminar
+    ball.addEventListener('contextmenu', e => {
+      e.preventDefault();
+      if (confirm('¿Eliminar este pendiente?')) {
+        deleteTodo(todo.id);
+      }
     });
+
+    let touchTimer;
+    ball.addEventListener('touchstart', () => {
+      touchTimer = setTimeout(() => {
+        if (confirm('¿Eliminar este pendiente?')) {
+          deleteTodo(todo.id);
+        }
+      }, 600);
+    });
+    ball.addEventListener('touchend', () => clearTimeout(touchTimer));
+
+    list.appendChild(ball);
   });
 }
 
@@ -738,3 +764,4 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 </body>
 </html>
+
