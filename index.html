@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Agenda Pelotas (Firebase)</title>
+<title>Agenda Pelotas (Local)</title>
 <link rel="preconnect" href="https://www.gstatic.com"/>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
@@ -90,7 +90,11 @@ h1{
 /* === Modales === */
 .card{background:var(--card);border-radius:16px;box-shadow:0 6px 18px rgba(99,102,241,.08);padding:16px}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;padding:16px;z-index:1000}
+.modal.show{display:flex}
 .modal .box{background:#fff;border-radius:14px;box-shadow:0 10px 24px rgba(0,0,0,.15);padding:20px;max-width:640px;width:100%}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.modal-header h3{margin:0;font-size:1.1rem}
+.modal-body{display:grid;gap:10px}
 input,select,textarea{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:10px;font-size:.95rem}
 .row{display:grid;gap:10px}
 .row.cols-2{grid-template-columns:1fr 1fr}
@@ -104,12 +108,14 @@ input,select,textarea{width:100%;padding:10px;border:1px solid #cbd5e1;border-ra
 .small{font-size:.9rem;color:var(--muted)}
 .list{display:grid;gap:10px;max-height:300px;overflow:auto;margin-top:8px}
 .entry{background:#eef2ff;border-left:4px solid var(--primary);padding:8px;border-radius:10px}
+.entry span{display:block;font-size:.85rem}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.75rem;background:#e5e7eb;color:#111827;margin-left:4px}
 </style>
 </head>
 <body>
   <header>
     <h1>Agenda Pelotas</h1>
-    <div class="status connecting" id="status">🕓 Conectando...</div>
+    <div class="status connecting" id="status">🕓 Cargando datos locales...</div>
     <div>
       <button class="btn" id="btnAdd">+ Agregar actividad</button>
       <button class="btn gray" id="btnGlobal">Historial global</button>
@@ -131,35 +137,495 @@ input,select,textarea{width:100%;padding:10px;border:1px solid #cbd5e1;border-ra
     <div class="board" id="boardLimit"></div>
   </section>
 
-<!-- ============ TODOS LOS MODALES ORIGINALES ============ -->
-<!-- (Tu código de modales, botones, entradas y gráficos permanece igual, solo el tablero cambió de estructura) -->
+  <!-- === Modal Actividad (crear / editar) === -->
+  <div class="modal" id="taskModal">
+    <div class="box">
+      <div class="modal-header">
+        <h3 id="taskModalTitle">Nueva actividad</h3>
+        <button class="btn gray" id="taskClose">Cerrar</button>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+          <div>
+            <label>Nombre</label>
+            <input type="text" id="taskName" placeholder="Ej: Gym, Estudiar GRE, etc." />
+          </div>
+        </div>
+        <div class="row cols-2">
+          <div>
+            <label>Tipo</label>
+            <select id="taskKind">
+              <option value="recurrent">Recurrente</option>
+              <option value="one_time">One Time</option>
+              <option value="limit">Límite / Meta</option>
+            </select>
+          </div>
+          <div>
+            <label>Meta (número)</label>
+            <input type="number" id="taskGoal" min="0" step="1" placeholder="Ej: 60 (minutos), 10 (veces)..." />
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Unidad</label>
+            <input type="text" id="taskUnit" placeholder="Ej: min, veces, páginas..." />
+          </div>
+        </div>
+        <div class="row">
+          <small class="small">
+            Recurrente / One Time: el progreso se calcula con lo que registres en el día.<br>
+            Límite / Meta: el progreso es acumulado (suma de todos los registros).
+          </small>
+        </div>
+        <div class="row" style="margin-top:10px;display:flex;gap:8px;justify-content:flex-end">
+          <button class="btn gray" id="taskDelete" style="display:none">Eliminar</button>
+          <button class="btn" id="taskSave">Guardar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- === Modal Registro de actividad (hoy u otra fecha) === -->
+  <div class="modal" id="entryModal">
+    <div class="box">
+      <div class="modal-header">
+        <h3 id="entryTitle">Registrar progreso</h3>
+        <button class="btn gray" id="entryClose">Cerrar</button>
+      </div>
+      <div class="modal-body">
+        <div class="row cols-2">
+          <div>
+            <label>Fecha</label>
+            <input type="date" id="entryDate" />
+          </div>
+          <div>
+            <label>Cantidad</label>
+            <input type="number" id="entryAmount" step="1" min="0" />
+          </div>
+        </div>
+        <div class="row">
+          <small class="small" id="entryHint"></small>
+        </div>
+        <div class="row" style="margin-top:10px;display:flex;gap:8px;justify-content:flex-end">
+          <button class="btn" id="entrySave">Guardar registro</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- === Modal Historial por actividad === -->
+  <div class="modal" id="historyModal">
+    <div class="box">
+      <div class="modal-header">
+        <h3 id="historyTitle">Historial</h3>
+        <button class="btn gray" id="historyClose">Cerrar</button>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+          <div class="card">
+            <canvas id="historyChart" height="160"></canvas>
+          </div>
+        </div>
+        <div class="row">
+          <div class="list" id="historyList"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- === Modal Historial Global === -->
+  <div class="modal" id="globalModal">
+    <div class="box">
+      <div class="modal-header">
+        <h3>Historial global</h3>
+        <button class="btn gray" id="globalClose">Cerrar</button>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+          <div class="list" id="globalList"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
 <script type="module">
-// === AQUÍ VA TODO TU JS ORIGINAL, SIN CAMBIAR NINGUNA FUNCIÓN ===
-// Mantiene: botones, modales, guardar, eliminar, historial, global, Firebase y Chart.js.
-// Solo cambia renderBoard() → ahora distribuye las tareas en las tres secciones:
-function renderBoard(){
-  const r=$("#boardRecurrentes"), o=$("#boardOneTime"), l=$("#boardLimit");
-  r.innerHTML=o.innerHTML=l.innerHTML='';
-  tasks.forEach(t=>{
-    const p=computeProgress(t);
-    const {fracText}=fractionForTask(t);
-    const ball=document.createElement('div');
-    ball.className='ball appear';
-    ball.style.setProperty('--p',(p*100).toFixed(2)+'%');
-    ball.style.setProperty('--col',colorForProgress(p));
-    ball.title=t.name;
-    ball.innerHTML=`<div class="center"><div class="frac">${fracText}</div><div class="pct">${Math.round(p*100)}%</div></div><div class="label"><b>${t.name}</b></div>`;
-    ball.addEventListener('click',()=>openEntry(t.id));
-    ball.addEventListener('contextmenu',e=>{e.preventDefault();openHistory(t.id)});
+/* ==================== ESTADO LOCAL ==================== */
+const STORAGE_KEY = 'agendaPelotas_state_v1';
+const $ = (sel) => document.querySelector(sel);
+
+let state = {
+  tasks: [],
+  entries: [] // {id, taskId, date: 'YYYY-MM-DD', amount: number}
+};
+let tasks = []; // alias para comodidad
+let currentTaskId = null;
+let historyChart = null;
+
+/* ==================== UTILIDADES ==================== */
+function todayStr() {
+  const d = new Date();
+  return d.toISOString().slice(0,10);
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      state = JSON.parse(raw);
+      state.tasks ??= [];
+      state.entries ??= [];
+    }
+  } catch (e) {
+    console.error('Error leyendo localStorage', e);
+    state = { tasks: [], entries: [] };
+  }
+  tasks = state.tasks;
+}
+
+function saveState() {
+  state.tasks = tasks;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+/* ==================== PROGRESO ==================== */
+function getEntriesForTask(taskId) {
+  return state.entries.filter(e => e.taskId === taskId);
+}
+
+function progressNumbers(task) {
+  const all = getEntriesForTask(task.id);
+  const goal = Number(task.goal) || 0;
+  if (goal <= 0) return { used: 0, goal: 0 };
+
+  let used = 0;
+  if (task.kind === 'limit') {
+    // Meta acumulada
+    used = all.reduce((s,e) => s + Number(e.amount || 0), 0);
+  } else {
+    // Recurrente / One Time: solo día seleccionado = hoy
+    const today = todayStr();
+    used = all
+      .filter(e => e.date === today)
+      .reduce((s,e) => s + Number(e.amount || 0), 0);
+  }
+  return { used, goal };
+}
+
+function computeProgress(task) {
+  const { used, goal } = progressNumbers(task);
+  if (!goal) return 0;
+  return Math.max(0, Math.min(1, used / goal));
+}
+
+function fractionForTask(task) {
+  const { used, goal } = progressNumbers(task);
+  if (!goal) return { fracText: `${used.toFixed(0)}` };
+  return { fracText: `${used.toFixed(0)}/${goal.toFixed(0)}` };
+}
+
+function colorForProgress(p) {
+  if (p >= 1) return '#10b981';         // verde
+  if (p >= 0.67) return '#3b82f6';      // azul
+  if (p >= 0.34) return '#facc15';      // amarillo
+  return '#ef4444';                     // rojo
+}
+
+/* ==================== MODALES ==================== */
+function openModal(el) {
+  el.classList.add('show');
+}
+function closeModal(el) {
+  el.classList.remove('show');
+}
+
+/* ==================== RENDER DEL TABLERO ==================== */
+function renderBoard() {
+  const r = $("#boardRecurrentes"),
+        o = $("#boardOneTime"),
+        l = $("#boardLimit");
+  r.innerHTML = o.innerHTML = l.innerHTML = '';
+
+  tasks.forEach(t => {
+    const p = computeProgress(t);
+    const { fracText } = fractionForTask(t);
+    const ball = document.createElement('div');
+    ball.className = 'ball appear';
+    ball.style.setProperty('--p', (p*100).toFixed(2)+'%');
+    ball.style.setProperty('--col', colorForProgress(p));
+    ball.title = t.name;
+    ball.innerHTML = `
+      <div class="center">
+        <div class="frac">${fracText}</div>
+        <div class="pct">${Math.round(p*100)}%</div>
+      </div>
+      <div class="label"><b>${t.name}</b></div>
+    `;
+
+    // Click → registrar
+    ball.addEventListener('click', () => openEntry(t.id));
+
+    // Click derecho / long press → historial
+    ball.addEventListener('contextmenu', e => {
+      e.preventDefault();
+      openHistory(t.id);
+    });
     let touchTimer;
-    ball.addEventListener('touchstart',()=>{touchTimer=setTimeout(()=>openHistory(t.id),600)});
-    ball.addEventListener('touchend',()=>clearTimeout(touchTimer));
-    const type=t.kind||t.type;
-    if(type==='recurrent')r.appendChild(ball);
-    else if(type==='one_time')o.appendChild(ball);
-    else l.appendChild(ball);
+    ball.addEventListener('touchstart', () => {
+      touchTimer = setTimeout(() => openHistory(t.id), 600);
+    });
+    ball.addEventListener('touchend', () => clearTimeout(touchTimer));
+
+    const type = t.kind || t.type;
+    if (type === 'recurrent')      r.appendChild(ball);
+    else if (type === 'one_time')  o.appendChild(ball);
+    else                           l.appendChild(ball);
   });
 }
+
+/* ==================== ACTIVIDADES ==================== */
+function openTaskModal(taskId = null) {
+  currentTaskId = taskId;
+  const modal = $('#taskModal');
+  const title = $('#taskModalTitle');
+  const btnDelete = $('#taskDelete');
+  const nameInput = $('#taskName');
+  const kindSelect = $('#taskKind');
+  const goalInput = $('#taskGoal');
+  const unitInput = $('#taskUnit');
+
+  if (taskId) {
+    const t = tasks.find(x => x.id === taskId);
+    if (!t) return;
+    title.textContent = 'Editar actividad';
+    nameInput.value = t.name || '';
+    kindSelect.value = t.kind || 'recurrent';
+    goalInput.value = t.goal ?? '';
+    unitInput.value = t.unit || '';
+    btnDelete.style.display = 'inline-block';
+  } else {
+    title.textContent = 'Nueva actividad';
+    nameInput.value = '';
+    kindSelect.value = 'recurrent';
+    goalInput.value = '';
+    unitInput.value = '';
+    btnDelete.style.display = 'none';
+  }
+
+  openModal(modal);
+}
+
+function saveTaskFromModal() {
+  const name = $('#taskName').value.trim();
+  const kind = $('#taskKind').value;
+  const goal = Number($('#taskGoal').value || 0);
+  const unit = $('#taskUnit').value.trim();
+
+  if (!name) {
+    alert('Ponle un nombre a la actividad');
+    return;
+  }
+
+  if (currentTaskId) {
+    const idx = tasks.findIndex(t => t.id === currentTaskId);
+    if (idx !== -1) {
+      tasks[idx] = { ...tasks[idx], name, kind, goal, unit };
+    }
+  } else {
+    const id = crypto.randomUUID();
+    tasks.push({ id, name, kind, goal, unit });
+  }
+
+  saveState();
+  renderBoard();
+  closeModal($('#taskModal'));
+}
+
+function deleteCurrentTask() {
+  if (!currentTaskId) return;
+  if (!confirm('¿Eliminar esta actividad y sus registros?')) return;
+  tasks = tasks.filter(t => t.id !== currentTaskId);
+  state.entries = state.entries.filter(e => e.taskId !== currentTaskId);
+  currentTaskId = null;
+  saveState();
+  renderBoard();
+  closeModal($('#taskModal'));
+}
+
+/* ==================== REGISTRO DE PROGRESO ==================== */
+function openEntry(taskId) {
+  currentTaskId = taskId;
+  const task = tasks.find(t => t.id === taskId);
+  if (!task) return;
+  const modal = $('#entryModal');
+
+  $('#entryTitle').textContent = `Registrar: ${task.name}`;
+  $('#entryDate').value = todayStr();
+  $('#entryAmount').value = '';
+
+  const { used, goal } = progressNumbers(task);
+  const unit = task.unit || '';
+  let hint = '';
+  if (goal > 0) {
+    if (task.kind === 'limit') {
+      hint = `Meta acumulada: ${used.toFixed(0)} / ${goal.toFixed(0)} ${unit}`;
+    } else {
+      hint = `Meta diaria: ${used.toFixed(0)} / ${goal.toFixed(0)} ${unit} (hoy)`;
+    }
+  } else {
+    hint = `Sin meta numérica definida.`;
+  }
+  $('#entryHint').textContent = hint;
+
+  openModal(modal);
+}
+
+function saveEntryFromModal() {
+  if (!currentTaskId) return;
+  const task = tasks.find(t => t.id === currentTaskId);
+  if (!task) return;
+
+  const date = $('#entryDate').value || todayStr();
+  const amount = Number($('#entryAmount').value || 0);
+  if (!amount) {
+    alert('Ingresa una cantidad mayor a 0');
+    return;
+  }
+
+  state.entries.push({
+    id: crypto.randomUUID(),
+    taskId: task.id,
+    date,
+    amount
+  });
+
+  saveState();
+  renderBoard();
+  closeModal($('#entryModal'));
+}
+
+/* ==================== HISTORIAL POR ACTIVIDAD ==================== */
+function openHistory(taskId) {
+  const task = tasks.find(t => t.id === taskId);
+  if (!task) return;
+  const modal = $('#historyModal');
+  $('#historyTitle').textContent = `Historial: ${task.name}`;
+
+  const entries = getEntriesForTask(taskId)
+    .slice()
+    .sort((a,b) => a.date.localeCompare(b.date));
+
+  const list = $('#historyList');
+  list.innerHTML = '';
+  if (entries.length === 0) {
+    const div = document.createElement('div');
+    div.className = 'entry';
+    div.innerHTML = '<span>No hay registros aún.</span>';
+    list.appendChild(div);
+  } else {
+    entries.forEach(e => {
+      const div = document.createElement('div');
+      div.className = 'entry';
+      div.innerHTML = `
+        <span><b>${e.date}</b> — +${e.amount} ${task.unit || ''}</span>
+      `;
+      list.appendChild(div);
+    });
+  }
+
+  // Chart
+  const ctx = document.getElementById('historyChart').getContext('2d');
+  if (historyChart) {
+    historyChart.destroy();
+  }
+  historyChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: entries.map(e => e.date),
+      datasets: [{
+        label: task.unit ? `Cantidad (${task.unit})` : 'Cantidad',
+        data: entries.map(e => e.amount),
+        tension: 0.3
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        x: { display: true },
+        y: { display: true, beginAtZero: true }
+      }
+    }
+  });
+
+  openModal(modal);
+}
+
+/* ==================== HISTORIAL GLOBAL ==================== */
+function openGlobalHistory() {
+  const list = $('#globalList');
+  list.innerHTML = '';
+
+  const entries = state.entries
+    .slice()
+    .sort((a,b) => b.date.localeCompare(a.date)) // más recientes primero
+    .slice(0, 100); // límite por si acaso
+
+  if (entries.length === 0) {
+    const div = document.createElement('div');
+    div.className = 'entry';
+    div.innerHTML = '<span>No hay registros todavía.</span>';
+    list.appendChild(div);
+  } else {
+    entries.forEach(e => {
+      const task = tasks.find(t => t.id === e.taskId);
+      const name = task ? task.name : 'Actividad desconocida';
+      const unit = task?.unit || '';
+      const kind = task?.kind || '';
+      const div = document.createElement('div');
+      div.className = 'entry';
+      div.innerHTML = `
+        <span><b>${e.date}</b> — ${name}</span>
+        <span>+${e.amount} ${unit} <span class="badge">${kind}</span></span>
+      `;
+      list.appendChild(div);
+    });
+  }
+
+  openModal($('#globalModal'));
+}
+
+/* ==================== INICIALIZACIÓN ==================== */
+document.addEventListener('DOMContentLoaded', () => {
+  // Estado
+  loadState();
+  renderBoard();
+
+  const status = $('#status');
+  status.classList.remove('connecting');
+  status.classList.add('connected');
+  status.textContent = '💾 Datos guardados en este dispositivo';
+
+  // Botones header
+  $('#btnAdd').addEventListener('click', () => openTaskModal(null));
+  $('#btnGlobal').addEventListener('click', openGlobalHistory);
+
+  // Modal actividad
+  $('#taskClose').addEventListener('click', () => closeModal($('#taskModal')));
+  $('#taskSave').addEventListener('click', saveTaskFromModal);
+  $('#taskDelete').addEventListener('click', deleteCurrentTask);
+
+  // Modal registro
+  $('#entryClose').addEventListener('click', () => closeModal($('#entryModal')));
+  $('#entrySave').addEventListener('click', saveEntryFromModal);
+
+  // Modal historial
+  $('#historyClose').addEventListener('click', () => closeModal($('#historyModal')));
+
+  // Modal global
+  $('#globalClose').addEventListener('click', () => closeModal($('#globalModal')));
+});
 </script>
 </body>
 </html>
