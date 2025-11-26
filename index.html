@@ -72,7 +72,7 @@ h1{
   gap:22px;justify-items:center;
 }
 
-/* === Pelotas === */
+/* === Pelotas (presupuesto) === */
 .ball{
   position:relative;width:160px;height:160px;border-radius:50%;
   display:flex;align-items:center;justify-content:center;
@@ -102,11 +102,6 @@ h1{
 }
 .ball.appear{animation:pop .25s ease}
 @keyframes pop{0%{transform:scale(.6);opacity:.3}100%{transform:scale(1);opacity:1}}
-
-/* Pelotas específicas para TODO (texto más pequeño) */
-.ball-todo .frac{
-  font-size:.9rem;
-}
 
 /* === Modales y tarjetas === */
 .card{
@@ -138,7 +133,7 @@ input,select,textarea{
 .list{
   display:flex;
   flex-direction:column;
-  gap:10px;
+  gap:8px;
   max-height:300px;
   overflow:auto;
   margin-top:8px;
@@ -147,6 +142,23 @@ input,select,textarea{
 .entry span{display:block;font-size:.85rem}
 .badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.75rem;background:#e5e7eb;color:#111827;margin-left:4px}
 h3{margin:0 0 4px 0;font-size:1.05rem}
+
+/* === Pendientes puntuales: bloques simples === */
+.todo-item{
+  background:#f9fafb;
+  border-radius:12px;
+  padding:10px 12px;
+  font-size:.9rem;
+  color:#0f172a;
+  border-left:4px solid var(--primary);
+  cursor:pointer;
+}
+.todo-item.done{
+  background:#dcfce7;
+  border-left-color:var(--ok);
+  text-decoration:line-through;
+  opacity:.85;
+}
 .todo-empty{
   color:var(--muted);
   font-size:.85rem;
@@ -205,8 +217,7 @@ h3{margin:0 0 4px 0;font-size:1.05rem}
           <button class="btn" id="btnAddTodo">Agregar pendiente</button>
         </div>
       </div>
-      <!-- AQUÍ USAMOS DIRECTO UN TABLERO DE PELOTAS -->
-      <div class="board" id="todoBoard"></div>
+      <div class="list" id="todoList"></div>
     </div>
   </section>
 
@@ -317,7 +328,7 @@ let state = {
   budgets: {},  // cycleKey -> { ocio, oficina, extras, otros }
   expenses: [], // {id, date, category, amount, comment}
   daily: { morningDoneOn: null, nightDoneOn: null },
-  todos: []     // {id, text, done}
+  todos: []     // {id, text, done, doneOn}
 };
 
 /* ==================== UTILIDADES ==================== */
@@ -615,64 +626,44 @@ function toggleRoutine(which) {
 }
 
 /* ==================== RECORDATORIOS: PENDIENTES ==================== */
+// elimina pendientes marcados "hechos" de días anteriores
+function cleanupTodos() {
+  const today = todayStr();
+  state.todos = (state.todos || []).filter(t => {
+    if (!t.done) return true;
+    if (!t.doneOn) return true;
+    return t.doneOn === today; // si es de antes de hoy, lo borramos
+  });
+}
+
 function renderTodos() {
-  const board = $('#todoBoard');
+  cleanupTodos();           // limpiamos antes de mostrar
+  saveState();              // guardamos el resultado
+
+  const list = $('#todoList');
   const todos = state.todos || [];
-  board.innerHTML = '';
+  list.innerHTML = '';
 
   if (!todos.length) {
-    const msg = document.createElement('div');
-    msg.className = 'todo-empty';
-    msg.textContent = 'No hay pendientes.';
-    // centrado ocupando todo el ancho del tablero
-    msg.style.gridColumn = '1 / -1';
-    board.appendChild(msg);
+    const div = document.createElement('div');
+    div.className = 'todo-empty';
+    div.textContent = 'No hay pendientes.';
+    list.appendChild(div);
     return;
   }
 
   todos.forEach(todo => {
-    const done = !!todo.done;
-    const ball = document.createElement('div');
-    ball.className = 'ball appear ball-todo';
+    const div = document.createElement('div');
+    div.className = 'todo-item';
+    if (todo.done) div.classList.add('done');
+    div.textContent = todo.text;
 
-    ball.style.setProperty('--p', done ? '100%' : '0%');
-    ball.style.setProperty('--col', done ? '#10b981' : '#e5e7eb');
-
-    const textStyle = done ? 'text-decoration:line-through; opacity:.7;' : '';
-
-    ball.innerHTML = `
-      <div class="center">
-        <div class="frac" style="${textStyle}">
-          ${todo.text}
-        </div>
-        <div class="pct">${done ? 'Hecho' : 'Pendiente'}</div>
-      </div>
-      <div class="label"><b>Pendiente</b></div>
-    `;
-
-    // click => alternar hecho / no hecho
-    ball.addEventListener('click', () => {
-      toggleTodo(todo.id, !done);
+    // click: marcar verde / desmarcar
+    div.addEventListener('click', () => {
+      toggleTodo(todo.id);
     });
 
-    // long press / click derecho => eliminar
-    ball.addEventListener('contextmenu', e => {
-      e.preventDefault();
-      if (confirm('¿Eliminar este pendiente?')) {
-        deleteTodo(todo.id);
-      }
-    });
-    let touchTimer;
-    ball.addEventListener('touchstart', () => {
-      touchTimer = setTimeout(() => {
-        if (confirm('¿Eliminar este pendiente?')) {
-          deleteTodo(todo.id);
-        }
-      }, 600);
-    });
-    ball.addEventListener('touchend', () => clearTimeout(touchTimer));
-
-    board.appendChild(ball);
+    list.appendChild(div);
   });
 }
 
@@ -681,22 +672,24 @@ function addTodo() {
   const text = textEl.value.trim();
   if (!text) return;
   if (!state.todos) state.todos = [];
-  state.todos.push({ id: crypto.randomUUID(), text, done: false });
+  state.todos.push({
+    id: crypto.randomUUID(),
+    text,
+    done: false,
+    doneOn: null
+  });
   textEl.value = '';
   saveState();
   renderTodos();
 }
 
-function toggleTodo(id, done) {
-  const todo = (state.todos || []).find(t => t.id === id);
+function toggleTodo(id) {
+  const todos = state.todos || [];
+  const todo = todos.find(t => t.id === id);
   if (!todo) return;
-  todo.done = done;
-  saveState();
-  renderTodos();
-}
-
-function deleteTodo(id) {
-  state.todos = (state.todos || []).filter(t => t.id !== id);
+  const nowDone = !todo.done;
+  todo.done = nowDone;
+  todo.doneOn = nowDone ? todayStr() : null;
   saveState();
   renderTodos();
 }
@@ -704,6 +697,9 @@ function deleteTodo(id) {
 /* ==================== INICIALIZACIÓN ==================== */
 document.addEventListener('DOMContentLoaded', () => {
   loadState();
+  cleanupTodos();
+  saveState();
+
   renderBudget();
   renderDaily();
   renderTodos();
