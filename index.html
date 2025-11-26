@@ -121,8 +121,22 @@ input,select,textarea{
   .ball .label{font-size:.95rem}
 }
 .small{font-size:.9rem;color:var(--muted)}
-.list{display:grid;gap:10px;max-height:300px;overflow:auto;margin-top:8px}
-.entry{background:#eef2ff;border-left:4px solid var(--primary);padding:8px;border-radius:10px}
+
+/* list se usa en varias partes, la dejamos flex en columna */
+.list{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  max-height:300px;
+  overflow:auto;
+  margin-top:8px;
+}
+
+/* Para historial de gastos sigue usando .entry */
+.entry{
+  background:#eef2ff;border-left:4px solid var(--primary);
+  padding:8px;border-radius:10px;
+}
 .entry span{display:block;font-size:.85rem}
 .badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.75rem;background:#e5e7eb;color:#111827;margin-left:4px}
 h3{margin:0 0 4px 0;font-size:1.05rem}
@@ -137,29 +151,28 @@ h3{margin:0 0 4px 0;font-size:1.05rem}
   padding:8px 10px;
   color:#0f172a;
   font-size:.9rem;
-  width:100%;              /* la fila usa todo el ancho */
+  width:100%;
 }
 .todo-label{
   display:flex;
   align-items:flex-start;
   gap:8px;
   cursor:pointer;
-  flex:1;                  /* el contenido (checkbox + texto) ocupa todo el espacio */
+  flex:1;          /* ocupa todo el espacio entre checkbox y botón */
+  min-width:0;     /* permite que el texto se ajuste y haga wrap */
 }
 .todo-label input[type="checkbox"]{
   margin-top:2px;
 }
 .todo-text{
   flex:1;
-  word-break:break-word;   /* el texto larga se corta bien en varias líneas */
+  word-break:break-word;
 }
 .todo-item.done .todo-text{
   text-decoration:line-through;
   opacity:.6;
 }
 .todo-empty{
-  background:transparent;
-  border-left:none;
   color:var(--muted);
   font-size:.85rem;
 }
@@ -463,10 +476,8 @@ function renderBudget() {
       <div class="label"><b>${cat.label}</b></div>
     `;
 
-    // Click → agregar gasto preseleccionando categoría
     ball.addEventListener('click', () => openExpenseModal(cat.key));
 
-    // Long press / click derecho → historial filtrado por categoría
     ball.addEventListener('contextmenu', e => {
       e.preventDefault();
       openExpensesHistory(cat.key);
